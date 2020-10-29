@@ -3,7 +3,9 @@ environment:
     - nodejs_version: "10"
     - nodejs_version: "12"
     - nodejs_version: "14"
-    - nodejs_version: "15"
+    # TODO: Uncomment when node15 is available.
+    # https://github.com/FormidableLabs/trace-pkg/issues/6
+    # - nodejs_version: "15"
 
 branches:
   only:
