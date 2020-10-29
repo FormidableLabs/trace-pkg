@@ -24,6 +24,8 @@ cache:
 test_script:
   - node --version
   - yarn --version
+  - node bin/trace-deps.js -v
+  - node bin/trace-deps.js -h
   - yarn check-ci
 
 # Don't actually build.

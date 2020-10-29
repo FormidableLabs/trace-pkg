@@ -3,7 +3,6 @@
 "use strict";
 
 const yargs = require("yargs/yargs");
-const { hideBin } = require("yargs/helpers");
 
 const { version } = require("../package.json");
 
@@ -22,7 +21,7 @@ const createPackage = async ({ opts }) => {
 const error = (...args) => console.error(...args); // eslint-disable-line no-console
 
 const getArgs = (args) => {
-  args = args || hideBin(process.argv);
+  args = args || yargs.hideBin(process.argv);
 
   // Parse
   const parsed = yargs(args)
