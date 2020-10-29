@@ -1,0 +1,29 @@
+trace-pkg 📦
+============
+
+[![npm version][npm_img]][npm_site]
+[![Travis Status][trav_img]][trav_site]
+[![AppVeyor Status][appveyor_img]][appveyor_site]
+[![Coverage Status][cov_img]][cov_site]
+
+A dependency tracing packager for Node.js source files.
+
+## Overview
+
+`trace-pkg` is a packager for Node.js applications. It ingests entry point files, then uses the [trace-deps][] library to infer all other source files imported at runtime, and then creates a zip bundle suitable for uses in a production environment like AWS Lambda, Serverless, etc.
+
+## Usage
+
+- [ ] TODO: Example usage
+- [ ] TODO: Configuration (with configuration files)
+
+[npm_img]: https://badge.fury.io/js/trace-pkg.svg
+[npm_site]: http://badge.fury.io/js/trace-pkg
+[trav_img]: https://api.travis-ci.com/FormidableLabs/trace-pkg.svg
+[trav_site]: https://travis-ci.com/FormidableLabs/trace-pkg
+[appveyor_img]: https://ci.appveyor.com/api/projects/status/github/formidablelabs/trace-pkg?branch=master&svg=true
+[appveyor_site]: https://ci.appveyor.com/project/FormidableLabs/trace-pkg
+[cov_img]: https://codecov.io/gh/FormidableLabs/trace-pkg/branch/master/graph/badge.svg
+[cov_site]: https://codecov.io/gh/FormidableLabs/trace-pkg
+
+[trace-deps]: https://github.com/FormidableLabs/trace-deps

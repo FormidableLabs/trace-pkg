@@ -1,0 +1,46 @@
+{
+  "name": "trace-pkg",
+  "version": "0.0.1",
+  "description": "A dependency tracing packager.",
+  "main": "index.js",
+  "bin": {
+    "trace-pkg": "./bin/trace-pkg.js"
+  },
+  "repository": "https://github.com/FormidableLabs/trace-pkg",
+  "author": "Ryan Roemer <ryan.roemer@formidable.com>",
+  "license": "MIT",
+  "keywords": [
+    "dependencies",
+    "require",
+    "require.resolve",
+    "import",
+    "serverless",
+    "lambda",
+    "packaging"
+  ],
+  "scripts": {
+    "preversion": "yarn run check",
+    "lint": "eslint .",
+    "test": "mocha",
+    "test-cov": "nyc mocha",
+    "check": "yarn lint && yarn test",
+    "check-ci": "yarn lint && yarn test-cov",
+    "codecov": "codecov"
+  },
+  "devDependencies": {
+    "babel-eslint": "^10.1.0",
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
+    "codecov": "^3.7.0",
+    "eslint": "^7.4.0",
+    "eslint-config-formidable": "^4.0.0",
+    "eslint-plugin-filenames": "^1.3.2",
+    "eslint-plugin-import": "^2.22.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "mocha": "^8.0.1",
+    "mock-fs": "^4.12.0",
+    "nyc": "^15.1.0",
+    "sinon": "^9.0.2",
+    "sinon-chai": "^3.5.0"
+  }
+}
