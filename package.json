@@ -42,5 +42,8 @@
     "nyc": "^15.1.0",
     "sinon": "^9.0.2",
     "sinon-chai": "^3.5.0"
+  },
+  "dependencies": {
+    "yargs": "^16.1.0"
   }
 }
