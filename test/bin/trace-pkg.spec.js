@@ -37,6 +37,6 @@ describe("bin/trace-pkg", () => {
   describe("package", () => {
     it("displays help when missing required options"); // TODO
 
-    it("TODO: IMPLEMENT SUITE");
+    it("TODO: IMPLEMENT SUITE"); // TODO
   });
 });

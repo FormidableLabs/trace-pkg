@@ -15,6 +15,9 @@ A dependency tracing packager for Node.js source files.
 ## Usage
 
 - [ ] TODO: Example usage
+
+## Configuration
+
 - [ ] TODO: Configuration (with configuration files)
 
 ## Notes

@@ -5,14 +5,9 @@
 const yargs = require("yargs/yargs");
 
 const { version } = require("../package.json");
+const createPackage = require("../lib/actions/package").package;
 
 const NAME = "trace-pkg";
-
-const createPackage = async ({ opts }) => {
-  // TODO: IMPLEMENT
-  // eslint-disable-next-line no-console
-  console.log("TODO: IMPLEMENT PACKAGE", { opts });
-};
 
 // ============================================================================
 // Helpers

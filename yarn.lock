@@ -265,7 +265,21 @@ acorn-jsx@^5.2.0:
   resolved "https://registry.yarnpkg.com/acorn-jsx/-/acorn-jsx-5.3.1.tgz#fc8661e11b7ac1539c47dbfea2e72b3af34d267b"
   integrity sha512-K0Ptm/47OKfQRpNQ2J/oIN/3QYiK6FwW+eJbILhsdxh2WTLdl+30o8aGdTbm5JbffpFFAg/g+zi1E+jvJha5ng==
 
-acorn@^7.4.0:
+acorn-node@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/acorn-node/-/acorn-node-2.0.1.tgz#4a93ba32335950da9250175c654721f20f3375a7"
+  integrity sha512-VLR5sHqjk+8c5hrKeP2fWaIHb8eewsoxnZ8r2qpwRHXMHuC7KyOPflnOx9dLssVQUurzJ7rO0OzIFjHcndafWw==
+  dependencies:
+    acorn "^7.0.0"
+    acorn-walk "^7.0.0"
+    xtend "^4.0.2"
+
+acorn-walk@^7.0.0:
+  version "7.2.0"
+  resolved "https://registry.yarnpkg.com/acorn-walk/-/acorn-walk-7.2.0.tgz#0de889a601203909b0fbe07b8938dc21d2e967bc"
+  integrity sha512-OPdCF6GsMIP+Az+aWfAAOEt2/+iVDKE7oy6lJ098aoe59oAmK76qV6Gw60SbZ8jHuG2wH058GF4pLFbYamYrVA==
+
+acorn@^7.0.0, acorn@^7.4.0:
   version "7.4.1"
   resolved "https://registry.yarnpkg.com/acorn/-/acorn-7.4.1.tgz#feaed255973d2e77555b83dbc08851a6c63520fa"
   integrity sha512-nQyp0o1/mNdbTO1PO6kHkwSrmgZ0MT/jCCpNiwbUjGoRN4dlBhqJtoQuCnEOKzgTVwg0ZWiCoQy6SxMebQVh8A==
@@ -2284,6 +2298,14 @@ to-regex-range@^5.0.1:
   dependencies:
     is-number "^7.0.0"
 
+trace-deps@^0.3.5:
+  version "0.3.5"
+  resolved "https://registry.yarnpkg.com/trace-deps/-/trace-deps-0.3.5.tgz#b764aaba4f7194a3159d13c47fde1d1e2e5888ea"
+  integrity sha512-vM3FcrMcgyVOLrhbeqcZLT7W5SIx8nIPvTtvNoBWupj93cylOGjd4fDxOQdGyadayELdsSEwBfIkXR8JKX6LYQ==
+  dependencies:
+    acorn-node "^2.0.1"
+    resolve "^1.17.0"
+
 tsconfig-paths@^3.9.0:
   version "3.9.0"
   resolved "https://registry.yarnpkg.com/tsconfig-paths/-/tsconfig-paths-3.9.0.tgz#098547a6c4448807e8fcb8eae081064ee9a3c90b"
@@ -2430,6 +2452,11 @@ write@1.0.3:
   integrity sha512-/lg70HAjtkUgWPVZhZcm+T4hkL8Zbtp1nFNOn3lRrxnlv50SRBv7cR7RqR+GMsd3hUXy9hWBo4CHTbFTcOYwig==
   dependencies:
     mkdirp "^0.5.1"
+
+xtend@^4.0.2:
+  version "4.0.2"
+  resolved "https://registry.yarnpkg.com/xtend/-/xtend-4.0.2.tgz#bb72779f5fa465186b1f438f674fa347fdb5db54"
+  integrity sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ==
 
 y18n@^4.0.0:
   version "4.0.0"
