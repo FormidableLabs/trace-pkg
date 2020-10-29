@@ -3,7 +3,7 @@
 const sinon = require("sinon");
 
 const pkg = require("../../package.json");
-const { cli } = require("../../bin/trace-pkg");
+const { NAME, cli } = require("../../bin/trace-pkg");
 
 describe("bin/trace-pkg", () => {
   let sandbox;
@@ -22,7 +22,7 @@ describe("bin/trace-pkg", () => {
     it("displays help", async () => {
       await cli({ args: ["--help"] });
 
-      expect(logStub).to.have.been.calledWithMatch("Usage: trace-pkg [options]");
+      expect(logStub).to.have.been.calledWithMatch(`Usage: ${NAME} [options]`);
     });
   });
 

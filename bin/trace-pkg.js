@@ -7,7 +7,7 @@ const { hideBin } = require("yargs/helpers");
 
 const { version } = require("../package.json");
 
-const BIN_NAME = "trace-pkg";
+const NAME = "trace-pkg";
 
 const createPackage = async ({ opts }) => {
   // TODO: IMPLEMENT
@@ -26,7 +26,7 @@ const getArgs = (args) => {
 
   // Parse
   const parsed = yargs(args)
-    .usage(`Usage: ${BIN_NAME} [options]`)
+    .usage(`Usage: ${NAME} [options]`)
     // TODO: Other examples? Report?
     // Logistical
     .exitProcess(false)
@@ -62,5 +62,6 @@ if (require.main === module) {
 }
 
 module.exports = {
+  NAME,
   cli
 };
