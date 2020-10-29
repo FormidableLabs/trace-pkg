@@ -1,0 +1,24 @@
+language: node_js
+
+node_js:
+  - "10"
+  - "12"
+  - "14"
+  - "15"
+
+branches:
+  only:
+    - main
+
+install:
+  # Fail if lockfile outdated.
+  # https://yarnpkg.com/lang/en/docs/cli/install/#toc-yarn-install-frozen-lockfile
+  - yarn install --frozen-lockfile
+
+cache: yarn
+
+script:
+  - node --version
+  - yarn --version
+  - yarn check-ci
+  - yarn codecov

@@ -1,0 +1,31 @@
+environment:
+  matrix:
+    - nodejs_version: "10"
+    - nodejs_version: "12"
+    - nodejs_version: "14"
+    - nodejs_version: "15"
+
+branches:
+  only:
+    - main
+
+# Install scripts. (runs after repo cloning)
+install:
+  - ps: Install-Product node $env:nodejs_version
+  - yarn install
+
+cache:
+  - node_modules
+  - "%LOCALAPPDATA%/Yarn"
+
+# Post-install test scripts.
+test_script:
+  - node --version
+  - yarn --version
+  - yarn check-ci
+
+# Don't actually build.
+build: off
+
+matrix:
+  fast_finish: true

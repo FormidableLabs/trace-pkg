@@ -10,7 +10,7 @@ A dependency tracing packager for Node.js source files.
 
 ## Overview
 
-`trace-pkg` is a packager for Node.js applications. It ingests entry point files, then uses the [trace-deps][] library to infer all other source files imported at runtime, and then creates a zip bundle suitable for uses in a production environment like AWS Lambda, Serverless, etc.
+`trace-pkg` is a packager for Node.js applications. It ingests entry point files, then uses the [trace-deps][] library to infer all other source files imported at runtime, and then creates a zip bundle suitable for use with AWS Lambda, Serverless, etc.
 
 ## Usage
 
