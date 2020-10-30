@@ -2,7 +2,13 @@
 
 "use strict";
 
+const fs = require("fs");
+const { promisify } = require("util");
+
+const readFile = promisify(fs.readFile);
+
 const yargs = require("yargs/yargs");
+const yaml = require("js-yaml");
 
 const { version } = require("../package.json");
 const createPackage = require("../lib/actions/package").package;
@@ -15,13 +21,18 @@ const NAME = "trace-pkg";
 // TODO: REMOVE? const log = (...args) => console.log(...args); // eslint-disable-line no-console
 const error = (...args) => console.error(...args); // eslint-disable-line no-console
 
-const getArgs = (args) => {
+const getArgs = async (args) => {
   args = args || yargs.hideBin(process.argv);
 
   // Parse
   const parsed = yargs(args)
     .usage(`Usage: ${NAME} [options]`)
-    // TODO: Other examples? Report?
+    // Files
+    .option("config", {
+      alias: "c",
+      describe: "Path to configuration file",
+      type: "string"
+    })
     // Logistical
     .exitProcess(false)
     .help().alias("help", "h")
@@ -30,7 +41,21 @@ const getArgs = (args) => {
 
   // Validate
   const { argv } = parsed;
-  const opts = argv;
+  const opts = {
+    help: !!argv.help,
+    version: !!argv.version
+  };
+
+  // Convert config file to full object.
+  if (typeof argv.config !== "undefined") {
+    try {
+      opts.config = yaml.safeLoad(await readFile(argv.config));
+    } catch (err) {
+      // Enhance message.
+      err.message = `Failed to load --config file"${argv.config}" with error: ${err.message}`;
+      throw err;
+    }
+  }
 
   return {
     opts
@@ -41,7 +66,7 @@ const getArgs = (args) => {
 // Script
 // ============================================================================
 const cli = async ({ args } = {}) => {
-  const { opts } = getArgs(args);
+  const { opts } = await getArgs(args);
 
   if (!(opts.help || opts.version)) {
     await createPackage({ opts });

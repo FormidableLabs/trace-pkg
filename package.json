@@ -28,6 +28,7 @@
     "codecov": "codecov"
   },
   "dependencies": {
+    "js-yaml": "^3.14.0",
     "trace-deps": "^0.3.5",
     "yargs": "^16.1.0"
   },
