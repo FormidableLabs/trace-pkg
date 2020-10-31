@@ -3,7 +3,8 @@
 const sinon = require("sinon");
 
 const pkg = require("../../package.json");
-const { NAME, cli } = require("../../bin/trace-pkg");
+const { NAME } = require("../../bin/lib/args");
+const { cli } = require("../../bin/trace-pkg");
 
 describe("bin/trace-pkg", () => {
   let sandbox;
