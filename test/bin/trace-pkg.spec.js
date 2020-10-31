@@ -43,6 +43,9 @@ describe("bin/trace-pkg", () => {
       it("inflates a JS configuration file"); // TODO
       it("inflates a JSON configuration file"); // TODO
       it("inflates a YAML configuration file"); // TODO
+
+      it("handles package zip file name without .zip suffix"); // TODO
+      it("handles package zip file name with .zip suffix"); // TODO
     });
 
     it("TODO: IMPLEMENT SUITE"); // TODO

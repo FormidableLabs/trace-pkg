@@ -18,7 +18,44 @@ A dependency tracing packager for Node.js source files.
 
 ## Configuration
 
-- [ ] TODO: Configuration (with configuration files)
+`trace-pkg` can be configured via CLI options or a YAML, JavaScript, or JSON file.
+
+- [ ] TODO: An output directory (e.g., `.serverless`).
+
+Here is an illustrative sample:
+
+```yml
+# Each "package" corresponds to an outputted zip file. It can contain an number
+# of traced or straight included files.
+packages:
+  # Keys should be designated according to zip file name without the ".zip"
+  # suffix.
+  <ZIP_FILE_NAME>:
+    # Absolute or CWD-relative file paths to trace and include all dependent files.
+    #
+    # - Must be JavaScript or JSON files capable of being `require|import`-ed by Node.js.
+    # - May be glob patterns.
+    trace:
+      - <ENTRY_POINT_OR_PATTERN_ONE>.js
+      - <ENTRY_POINT_TWO>.js
+
+    # Absolute or CWD-relative file paths to straight include without tracing or introspection
+    #
+    # - May be any type of file on disk.
+    # - May be glob patterns.
+    include:
+      - <FILE_OR_PATTERN_ONE>.js
+      - <FILE_TWO>.js
+
+  # Examples:
+  my-function:                # produces `my-function.zip`
+    trace:
+      - src/server.js         # trace individual file `src/server.js`
+      - src/config/**/*.js    # trace all JS files in `src/config`
+    include:
+      - assets/**/*.css       # include all CSS files in `assets`
+
+```
 
 ## Notes
 
