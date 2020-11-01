@@ -6,7 +6,7 @@ const { promisify } = require("util");
 const readFile = promisify(fs.readFile);
 
 const yargs = require("yargs/yargs");
-const yaml = require("js-yaml");
+const yaml = require("yaml");
 
 const { version } = require("../../package.json");
 const NAME = "trace-pkg";
@@ -39,7 +39,8 @@ const getArgs = async (args) => {
   // Convert config file to full object.
   if (typeof argv.config !== "undefined") {
     try {
-      opts.config = yaml.safeLoad(await readFile(argv.config));
+      const buf = await readFile(argv.config);
+      opts.config = yaml.parse(buf.toString());
     } catch (err) {
       // Enhance message.
       err.message = `Failed to load --config file"${argv.config}" with error: ${err.message}`;
