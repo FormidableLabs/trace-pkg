@@ -40,6 +40,7 @@ const getArgs = async (args) => {
   if (typeof argv.config !== "undefined") {
     try {
       const buf = await readFile(argv.config);
+      // TODO: Handle JS, JSON with `require()`.
       opts.config = yaml.parse(buf.toString());
     } catch (err) {
       // Enhance message.
