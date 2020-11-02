@@ -1,5 +1,6 @@
 "use strict";
 
+const path = require("path");
 const fs = require("fs");
 const { promisify } = require("util");
 
@@ -10,6 +11,12 @@ const yaml = require("yaml");
 
 const { version } = require("../../package.json");
 const NAME = "trace-pkg";
+const YAML_EXTS = [".json", ".yml", ".yaml"]; // YAML parser handles JSON too.
+
+// Mockable JS loader.
+const _loader = {
+  require
+};
 
 const getArgs = async (args) => {
   args = args || yargs.hideBin(process.argv);
@@ -39,9 +46,14 @@ const getArgs = async (args) => {
   // Convert config file to full object.
   if (typeof argv.config !== "undefined") {
     try {
-      const buf = await readFile(argv.config);
-      // TODO: Handle JS, JSON with `require()`.
-      opts.config = yaml.parse(buf.toString());
+      if (YAML_EXTS.includes(path.extname(argv.config))) {
+        // Try YAML first if suffix match.
+        const buf = await readFile(argv.config);
+        opts.config = opts.config || yaml.parse(buf.toString());
+      } else {
+        // Otherwise, just do a normal require().
+        opts.config = _loader.require(path.resolve(argv.config));
+      }
     } catch (err) {
       // Enhance message.
       err.message = `Failed to load --config file "${argv.config}" with error: ${err.message}`;
@@ -56,5 +68,6 @@ const getArgs = async (args) => {
 
 module.exports = {
   NAME,
-  getArgs
+  getArgs,
+  _loader
 };

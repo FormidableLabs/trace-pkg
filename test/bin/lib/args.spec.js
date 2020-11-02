@@ -3,7 +3,7 @@
 const mock = require("mock-fs");
 const sinon = require("sinon");
 
-const { getArgs } = require("../../../bin/lib/args");
+const { getArgs, _loader } = require("../../../bin/lib/args");
 
 describe("bin/lib/args", () => {
   let sandbox;
@@ -30,8 +30,62 @@ describe("bin/lib/args", () => {
 
     it("errors on invalid config"); // TODO
 
-    it("inflates a JS configuration file"); // TODO
-    it("inflates a JSON configuration file"); // TODO
+    it("inflates a JS configuration file", async () => {
+      // mock-fs can't handle the real `require` well, so just stub it.
+      sandbox.stub(_loader, "require").returns({
+        packages: {
+          one: {
+            trace: [
+              "src/one.js"
+            ]
+          }
+        }
+      });
+
+      const args = await getArgs([
+        "--config",
+        "trace-pkg.js"
+      ]);
+
+      expect(args).to.have.nested.property("opts.config").that.eql({
+        packages: {
+          one: {
+            trace: [
+              "src/one.js"
+            ]
+          }
+        }
+      });
+    });
+
+    it("inflates a JSON configuration file", async () => {
+      mock({
+        "trace-pkg.json": JSON.stringify({
+          packages: {
+            one: {
+              trace: [
+                "src/one.js"
+              ]
+            }
+          }
+        })
+      });
+
+      const args = await getArgs([
+        "--config",
+        "trace-pkg.json"
+      ]);
+
+      expect(args).to.have.nested.property("opts.config").that.eql({
+        packages: {
+          one: {
+            trace: [
+              "src/one.js"
+            ]
+          }
+        }
+      });
+    });
 
     it("inflates a YAML configuration file", async () => {
       mock({

@@ -1,5 +1,6 @@
 "use strict";
 
+const mock = require("mock-fs");
 const sinon = require("sinon");
 
 const pkg = require("../../package.json");
@@ -11,12 +12,14 @@ describe("bin/trace-pkg", () => {
   let logStub;
 
   beforeEach(() => {
+    mock({});
     sandbox = sinon.createSandbox();
     logStub = sandbox.stub(console, "log");
   });
 
   afterEach(() => {
     sandbox.restore();
+    mock.restore();
   });
 
   describe("help", () => {
