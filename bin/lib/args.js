@@ -44,7 +44,7 @@ const getArgs = async (args) => {
       opts.config = yaml.parse(buf.toString());
     } catch (err) {
       // Enhance message.
-      err.message = `Failed to load --config file"${argv.config}" with error: ${err.message}`;
+      err.message = `Failed to load --config file "${argv.config}" with error: ${err.message}`;
       throw err;
     }
   }
