@@ -13,13 +13,18 @@ A dependency tracing packager for Node.js source files.
 
 ## Usage
 
-- [ ] TODO: Example usage
+```
+Usage: trace-pkg [options]
+
+Options:
+  -c, --config   Path to configuration file                             [string]
+  -h, --help     Show help                                             [boolean]
+  -v, --version  Show version number                                   [boolean]
+```
 
 ## Configuration
 
-`trace-pkg` can be configured via CLI options or a YAML, JavaScript, or JSON file.
-
-- [ ] TODO: An output directory (e.g., `.serverless`).
+`trace-pkg` can be configured via a YAML, JavaScript, or JSON file.
 
 Here is an illustrative sample:
 
