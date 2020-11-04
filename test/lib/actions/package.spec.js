@@ -2,6 +2,7 @@
 
 const mock = require("mock-fs");
 const sinon = require("sinon");
+const globby = require("globby");
 const AdmZip = require("adm-zip");
 
 const createPackage = require("../../../lib/actions/package").package;
@@ -62,9 +63,6 @@ describe("lib/actions/package", () => {
     );
   });
 
-  // TODO
-  // - [ ] `options.cwd`
-  // - [ ] `packages.KEY.cwd`
   it("packages across multiple different working directories", async () => {
     mock({
       src: {
@@ -117,6 +115,11 @@ describe("lib/actions/package", () => {
       }
     });
 
+    expect(await globby(".build/*.zip")).to.eql([
+      ".build/one.zip",
+      ".build/three.zip",
+      ".build/two.zip"
+    ]);
     expect(zipContents(".build/one.zip")).to.eql([
       "one.js",
       "deeper/dep.js",
@@ -135,7 +138,54 @@ describe("lib/actions/package", () => {
   // - [ ] `KEY`
   // - [ ] `KEY.zip`
   // - [ ] `output: PATH/TO/NAME.zip`
-  it("outputs zip files to multiple different locations"); // TODO
+  it("outputs zip files to multiple different locations", async () => {
+    mock({
+      src: {
+        "one.js": "module.exports = require('./one/dep');",
+        one: {
+          "dep.js": "module.exports = require('./deeper/dep');",
+          deeper: {
+            "dep.js": "module.exports = \"deeper-dep\";"
+          }
+        },
+        "two.json": "{ \"msg\": \"two\" }",
+        "two.css": "body.two { background-color: pink; }"
+      }
+    });
+
+    await createPackage({
+      opts: {
+        config: {
+          packages: {
+            "one.zip": {
+              trace: [
+                "src/one.js"
+              ]
+            },
+            two: {
+              include: [
+                "src/two.*"
+              ]
+            }
+          }
+        }
+      }
+    });
+
+    expect(await globby("*.zip")).to.eql([
+      "one.zip",
+      "two.zip"
+    ]);
+    expect(zipContents("one.zip")).to.eql([
+      "src/one.js",
+      "src/one/deeper/dep.js",
+      "src/one/dep.js"
+    ]);
+    expect(zipContents("two.zip")).to.eql([
+      "src/two.css",
+      "src/two.json"
+    ]);
+  });
 
   it("packages projects with symlinks"); // TODO
   it("packages monorepos"); // TODO
