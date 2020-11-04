@@ -58,6 +58,9 @@ describe("lib/actions/package", () => {
 
   it("packages across multiple different working directories"); // TODO
   it("outputs zip files to multiple different locations"); // TODO
+  it("packages projects with symlinks"); // TODO
+  it("packages monorepos"); // TODO
+  it("packages monorepos with symlinks"); // TODO
 
   it("TODO: IMPLEMENT SUITE"); // TODO
 });
