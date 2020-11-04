@@ -56,8 +56,17 @@ describe("lib/actions/package", () => {
     );
   });
 
+  // TODO
+  // - [ ] `options.cwd`
+  // - [ ] `packages.KEY.cwd`
   it("packages across multiple different working directories"); // TODO
+
+  // TODO
+  // - [ ] `KEY`
+  // - [ ] `KEY.zip`
+  // - [ ] `output: PATH/TO/NAME.zip`
   it("outputs zip files to multiple different locations"); // TODO
+
   it("packages projects with symlinks"); // TODO
   it("packages monorepos"); // TODO
   it("packages monorepos with symlinks"); // TODO
