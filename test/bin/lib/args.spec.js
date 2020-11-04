@@ -28,7 +28,7 @@ describe("bin/lib/args", () => {
       );
     });
 
-    it("errors on invalid config"); // TODO
+    it("errors on invalid config"); // TODO: (Or somewhere else?)
 
     it("inflates a JS configuration file", async () => {
       // mock-fs can't handle the real `require` well, so just stub it.

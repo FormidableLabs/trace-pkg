@@ -25,12 +25,28 @@ A dependency tracing packager for Node.js source files.
 Here is an illustrative sample:
 
 ```yml
+# Global options
+options:
+  # Current working directory - OPTIONAL (default: `process.cwd()`)
+  #
+  # Directory from which to read input files as well as output zip bundles.
+  cwd: /ABSOLUTE/PATH (or) ./a/relative/path/to/process.cwd
+
 # Each "package" corresponds to an outputted zip file. It can contain an number
 # of traced or straight included files.
 packages:
+  # FULL OPTIONS
+  # ============
   # Keys should be designated according to zip file name without the ".zip"
   # suffix.
   <ZIP_FILE_NAME>:
+    # Current working directory - OPTIONAL (default: `options.cwd` value)
+    cwd: /ABSOLUTE/PATH (or) ./a/relative/path/to/process.cwd
+
+    # Output file path - OPTIONAL (default: `[packages.<NAME>].zip`)
+    # File path (absolute or relative to `cwd` option) for output bundle.
+    output: ../artifacts/ZIP_FILE_NAME.zip
+
     # Absolute or CWD-relative file paths to trace and include all dependent files.
     #
     # - Must be JavaScript or JSON files capable of being `require|import`-ed by Node.js.
@@ -47,7 +63,8 @@ packages:
       - <FILE_OR_PATTERN_ONE>.js
       - <FILE_TWO>.js
 
-  # Examples:
+  # EXAMPLES
+  # ========
   my-function:                # produces `my-function.zip`
     trace:
       - src/server.js         # trace individual file `src/server.js`
