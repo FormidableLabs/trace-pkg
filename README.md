@@ -80,6 +80,13 @@ packages:
 
 ## Notes
 
+### Packaged files
+
+Like the [Serverless framework][], `trace-pkg` attempts to create deteriministic zip files wherein the same source files should produce a byte-wise identical zip file. We do this via two primary means:
+
+- Source files are sorted in order of insertion into the zip archive.
+- Source files have `mtime` file metadata set to the UNIX epoch.
+
 ### Comparison to serverless-jetpack
 
 For those familiar with the [Serverless framework][], this project provides the packaging speed of the [serverless-jetpack][] plugin as both use the same [underlying tracing library][trace-deps], just without the actual Serverless Framework.
