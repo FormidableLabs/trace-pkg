@@ -71,5 +71,7 @@ describe("lib/actions/package", () => {
   it("packages monorepos"); // TODO
   it("packages monorepos with symlinks"); // TODO
 
+  it("errors on collapsed files in zip bundle"); // TODO
+
   it("TODO: IMPLEMENT SUITE"); // TODO
 });
