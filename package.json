@@ -36,6 +36,7 @@
     "yargs": "^16.1.0"
   },
   "devDependencies": {
+    "adm-zip": "^0.4.16",
     "babel-eslint": "^10.1.0",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
