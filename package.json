@@ -29,7 +29,9 @@
   },
   "dependencies": {
     "archiver": "^5.0.2",
+    "chalk": "^4.1.0",
     "globby": "^11.0.1",
+    "jest-worker": "^26.6.2",
     "make-dir": "^3.1.0",
     "trace-deps": "^0.3.5",
     "yaml": "^1.10.0",

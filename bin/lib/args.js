@@ -31,6 +31,10 @@ const getArgs = async (args) => {
       type: "string",
       required: true
     })
+    .option("concurrency", {
+      describe: "Parallel processes to use (0/null/Infinity = num CPUs)",
+      type: "number"
+    })
     // Logistical
     .exitProcess(false)
     .help().alias("help", "h")
