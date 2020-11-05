@@ -3,21 +3,19 @@
 const mock = require("mock-fs");
 const sinon = require("sinon");
 const globby = require("globby");
-const AdmZip = require("adm-zip");
 
 const createPackage = require("../../../lib/actions/package").package;
 
-const zipContents = (zipPath) => {
-  const zip = new AdmZip(zipPath);
-  return zip.getEntries().map(({ entryName }) => entryName);
-};
+const { zipContents } = require("../../util/file");
 
 describe("lib/actions/package", () => {
   let sandbox;
+  let logStub;
 
   beforeEach(() => {
     mock({});
     sandbox = sinon.createSandbox();
+    logStub = sandbox.stub(console, "log");
   });
 
   afterEach(() => {
@@ -115,6 +113,8 @@ describe("lib/actions/package", () => {
       }
     });
 
+    expect(logStub).to.have.been.calledWithMatch("Created 3 packages:");
+
     expect(await globby(".build/*.zip")).to.eql([
       ".build/one.zip",
       ".build/three.zip",
@@ -167,6 +167,8 @@ describe("lib/actions/package", () => {
         }
       }
     });
+
+    expect(logStub).to.have.been.calledWithMatch("Created 2 packages:");
 
     expect(await globby("*.zip")).to.eql([
       "one.zip",
@@ -265,6 +267,8 @@ describe("lib/actions/package", () => {
         }
       }
     });
+
+    expect(logStub).to.have.been.calledWithMatch("Created 2 packages:");
 
     expect(await globby(".build/*.zip")).to.eql([
       ".build/one.zip",

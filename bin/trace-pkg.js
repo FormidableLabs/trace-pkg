@@ -3,8 +3,7 @@
 "use strict";
 
 const { getArgs } = require("./lib/args");
-const { error } = require("./lib/log");
-
+const { error } = require("../lib/log");
 const createPackage = require("../lib/actions/package").package;
 
 // ============================================================================

@@ -28,8 +28,6 @@ describe("bin/lib/args", () => {
       );
     });
 
-    it("errors on invalid config"); // TODO: (Or somewhere else?)
-
     it("inflates a JS configuration file", async () => {
       // mock-fs can't handle the real `require` well, so just stub it.
       sandbox.stub(_loader, "require").returns({
@@ -112,10 +110,5 @@ describe("bin/lib/args", () => {
         }
       });
     });
-
-    it("handles package zip file name without .zip suffix"); // TODO
-    it("handles package zip file name with .zip suffix"); // TODO
   });
-
-  it("TODO: IMPLEMENT SUITE for other options"); // TODO
 });

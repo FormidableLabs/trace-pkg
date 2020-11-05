@@ -17,7 +17,7 @@ A dependency tracing packager for Node.js source files.
 Usage: trace-pkg [options]
 
 Options:
-  -c, --config   Path to configuration file                             [string]
+  -c, --config   Path to configuration file                  [string] [required]
   -h, --help     Show help                                             [boolean]
   -v, --version  Show version number                                   [boolean]
 ```

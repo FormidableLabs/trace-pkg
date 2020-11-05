@@ -28,7 +28,8 @@ const getArgs = async (args) => {
     .option("config", {
       alias: "c",
       describe: "Path to configuration file",
-      type: "string"
+      type: "string",
+      required: true
     })
     // Logistical
     .exitProcess(false)
