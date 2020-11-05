@@ -134,10 +134,6 @@ describe("lib/actions/package", () => {
     ]);
   });
 
-  // TODO
-  // - [ ] `KEY`
-  // - [ ] `KEY.zip`
-  // - [ ] `output: PATH/TO/NAME.zip`
   it("outputs zip files to multiple different locations", async () => {
     mock({
       src: {
@@ -187,11 +183,119 @@ describe("lib/actions/package", () => {
     ]);
   });
 
-  it("packages projects with symlinks"); // TODO
-  it("packages monorepos"); // TODO
-  it("packages monorepos with symlinks"); // TODO
+  it("packages monorepos", async () => {
+    mock({
+      "package.json": JSON.stringify({}),
+      functions: {
+        one: {
+          "index.js": "module.exports = require('./src/dep');",
+          src: {
+            "dep.js": "module.exports = require('./deeper/dep');",
+            deeper: {
+              "dep.js": `
+                require("local-nm-pkg");
+                require("root-nm-pkg");
+                module.exports = "deeper-dep";
+              `
+            }
+          },
+          "package.json": JSON.stringify({
+            main: "index.js"
+          }),
+          node_modules: {
+            "local-nm-pkg": {
+              "package.json": JSON.stringify({
+                main: "index.js"
+              }),
+              "index.js": "module.exports = 'local-nm-pkg';"
+            }
+          }
+        },
+        two: {
+          "index.js": "module.exports = require(\"local-nm-pkg-two\");",
+          src: {
+            "two.json": "{ \"msg\": \"two\" }",
+            "two.css": "body.two { background-color: pink; }"
+          },
+          "package.json": {
+            main: "./index.js"
+          },
+          node_modules: {
+            "local-nm-pkg-two": {
+              "package.json": JSON.stringify({
+                main: "index.js"
+              }),
+              "index.js": "module.exports = 'local-nm-pkg-two';"
+            }
+          }
+        },
+        node_modules: {
+          "root-nm-pkg": {
+            "package.json": JSON.stringify({
+              main: "main.js"
+            }),
+            "main.js": "module.exports = 'root-nm-pkg';"
+          }
+        }
+      }
+    });
 
-  it("errors on collapsed files in zip bundle"); // TODO
+    await createPackage({
+      opts: {
+        config: {
+          packages: {
+            one: {
+              cwd: "functions/one",
+              output: "../../.build/one.zip",
+              trace: [
+                "index.js"
+              ]
+            },
+            two: {
+              cwd: "functions/two",
+              output: "../../.build/two.zip",
+              trace: [
+                "index.js"
+              ],
+              include: [
+                "src/two.*"
+              ]
+            }
+          }
+        }
+      }
+    });
 
-  it("TODO: IMPLEMENT SUITE"); // TODO
+    expect(await globby(".build/*.zip")).to.eql([
+      ".build/one.zip",
+      ".build/two.zip"
+    ]);
+    expect(zipContents(".build/one.zip")).to.eql([
+      // Note: `root-nm-pkg` appears out of sorted order because collapsed
+      // from `../../node_modules/root-nm-pkg/index.js`.
+      "node_modules/root-nm-pkg/main.js",
+      "node_modules/root-nm-pkg/package.json",
+      "index.js",
+      "node_modules/local-nm-pkg/index.js",
+      "node_modules/local-nm-pkg/package.json",
+      "package.json",
+      "src/deeper/dep.js",
+      "src/dep.js"
+    ]);
+    expect(zipContents(".build/two.zip")).to.eql([
+      "index.js",
+      "node_modules/local-nm-pkg-two/index.js",
+      "node_modules/local-nm-pkg-two/package.json",
+      "src/two.css",
+      "src/two.json"
+    ]);
+  });
+
+  // https://github.com/FormidableLabs/trace-pkg/issues/11
+  it("packages projects with symlinks"); // TODO(11)
+  it("packages monorepos with symlinks"); // TODO(11)
+  it("packages monorepos with interproject dependencies"); // TODO(11)
+
+  // https://github.com/FormidableLabs/trace-pkg/issues/3
+  it("errors on collapsed files in zip bundle"); // TODO(3)
 });
