@@ -32,8 +32,18 @@ const getArgs = async (args) => {
       required: true
     })
     .option("concurrency", {
-      describe: "Parallel processes to use (0/null/Infinity = num CPUs)",
+      describe: "Parallel processes to use (default: 1)",
       type: "number"
+    })
+    .option("dry-run", {
+      alias: "d",
+      describe: "Don't actually produce output bundle",
+      type: "boolean"
+    })
+    .option("report", {
+      alias: "r",
+      describe: "Generate extended report",
+      type: "boolean"
     })
     // Logistical
     .exitProcess(false)
@@ -45,7 +55,10 @@ const getArgs = async (args) => {
   const { argv } = parsed;
   const opts = {
     help: !!argv.help,
-    version: !!argv.version
+    version: !!argv.version,
+    concurrency: argv.concurrency,
+    dryRun: argv.dryRun,
+    report: argv.report
   };
 
   // Convert config file to full object.
