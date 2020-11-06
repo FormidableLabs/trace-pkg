@@ -28,20 +28,14 @@ describe("e2e/trace-pkg", () => {
   });
 
   describe("package", () => {
-    it.only("performs concurrent bundles", async () => {
+    it("performs concurrent bundles", async () => {
       const cwd = path.join(tmpDir, "simple");
       await fs.copy(path.join(FIXTURES_DIR, "simple"), cwd);
 
       const { stdout, stderr } = await execa(
         "node",
-        [
-          CLI,
-          "-c",
-          "trace-pkg.yml"
-        ],
-        {
-          cwd
-        }
+        [CLI, "-c", "trace-pkg.yml"],
+        { cwd }
       );
 
       expect(stdout).to.contain(`
@@ -71,6 +65,26 @@ describe("e2e/trace-pkg", () => {
       ]);
     });
 
-    it("handles errors from worker bundle process"); // TODO
+    it("handles errors from worker bundle process", async () => {
+      const cwd = path.join(tmpDir, "error");
+      await fs.copy(path.join(FIXTURES_DIR, "error"), cwd);
+
+      let err;
+      try {
+        await execa(
+          "node",
+          [CLI, "-c", "trace-pkg.yml"],
+          { cwd }
+        );
+      } catch (e) {
+        err = e;
+      }
+
+      expect(err).to.be.ok;
+      expect(err.stdout).to.equal("");
+      expect(err.stderr).to.match(
+        /Error: Encountered resolution error in .* for \.\/does-not-exist\.js/
+      );
+    });
   });
 });
