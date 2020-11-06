@@ -56,8 +56,8 @@ const getArgs = async (args) => {
   const opts = {
     help: !!argv.help,
     version: !!argv.version,
+    dryRun: !!argv.dryRun,
     concurrency: argv.concurrency,
-    dryRun: argv.dryRun,
     report: argv.report
   };
 
