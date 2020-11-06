@@ -37,6 +37,7 @@ options:
   # Number of parallel processes to use for bundling.
   #
   # - Defaults to `1` process, which serially runs each bundle.
+  # - `1`/serial mode is run in the same process as `trace-pkg`.
   # - Setting to `0` will use number of CPUs detected on machine.
   # - Can be overridden by `--concurrency=<NUMBER>` command line option.
   concurrency: <NUMBER>
