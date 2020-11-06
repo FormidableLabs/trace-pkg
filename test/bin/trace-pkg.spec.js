@@ -41,16 +41,6 @@ describe("bin/trace-pkg", () => {
     });
   });
 
-  // These tests have a real FS (for testing concurrency).
-  describe("package e2e", () => {
-    beforeEach(() => {
-      mock.restore();
-    });
-
-    it("handles errors from worker bundle process"); // TODO
-    it("performs concurrent bundles"); // TODO
-  });
-
   describe("package", () => {
     it("displays help when missing required options"); // TODO
 
