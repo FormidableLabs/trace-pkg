@@ -44,7 +44,7 @@ describe("bin/trace-pkg", () => {
   describe("package", () => {
     it("displays help when missing required options"); // TODO
 
-    it("packages source files", async () => {
+    it("packages source files with report", async () => {
       mock({
         "trace-pkg.yml": `
           packages:
@@ -118,10 +118,15 @@ describe("bin/trace-pkg", () => {
 
       await cli({ args: [
         "--config",
-        "trace-pkg.yml"
+        "trace-pkg.yml",
+        "--report"
       ] });
 
-      expect(logStub).to.have.been.calledWithMatch("Created 2 packages:");
+      expect(logStub).to.have.been
+        .calledWithMatch("## Configuration")
+        .calledWithMatch("config:")
+        .calledWithMatch("## Output")
+        .calledWithMatch("one:");
 
       expect(await globby(".build/*.zip")).to.eql([
         ".build/one.zip",
