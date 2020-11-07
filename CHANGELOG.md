@@ -1,7 +1,7 @@
 Changes
 =======
 
-## UNRELEASED
+## 0.1.0
 
 * Feature: Produce verbose `--report` about bundle run.
   [#2](https://github.com/FormidableLabs/trace-pkg/issues/2)
