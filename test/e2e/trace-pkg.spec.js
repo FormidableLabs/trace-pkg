@@ -18,7 +18,8 @@ describe("e2e/trace-pkg", () => {
   let tmpDir;
 
   beforeEach(async () => {
-    tmpDir = await fs.ensureDir(path.join(TMP, "trace-pkg", uuid.v4()));
+    tmpDir = path.join(TMP, "trace-pkg", uuid.v4());
+    await fs.ensureDir(tmpDir);
   });
 
   afterEach(async () => {
