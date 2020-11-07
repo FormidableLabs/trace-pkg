@@ -34,15 +34,15 @@ describe("e2e/trace-pkg", () => {
 
       const { stdout, stderr } = await execa(
         "node",
-        [CLI, "-c", "trace-pkg.yml"],
+        [CLI, "-c", "trace-pkg.yml", "--concurrency=0"],
         { cwd }
       );
 
       expect(stdout).to.contain(`
         Created 3 packages:
-        - three: ../../three.zip (1 files)
         - one: one.zip (1 files)
         - two: two.zip (3 files)
+        - three: ../../three.zip (1 files)
       `.trim().replace(/^ {8}/gm, ""));
 
       expect(stderr).to.equal("");
@@ -70,15 +70,11 @@ describe("e2e/trace-pkg", () => {
       await fs.copy(path.join(FIXTURES_DIR, "error"), cwd);
 
       let err;
-      try {
-        await execa(
-          "node",
-          [CLI, "-c", "trace-pkg.yml"],
-          { cwd }
-        );
-      } catch (e) {
-        err = e;
-      }
+      await execa(
+        "node",
+        [CLI, "-c", "trace-pkg.yml", "--concurrency=0"],
+        { cwd }
+      ).catch((e) => { err = e; });
 
       expect(err).to.be.ok;
       expect(err.stdout).to.equal("");
