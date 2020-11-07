@@ -17,20 +17,31 @@ A dependency tracing packager for Node.js source files.
 Usage: trace-pkg [options]
 
 Options:
-  -c, --config   Path to configuration file                  [string] [required]
-  -h, --help     Show help                                             [boolean]
-  -v, --version  Show version number                                   [boolean]
+  -c, --config       Path to configuration file              [string] [required]
+      --concurrency  Parallel processes to use (default: 1)            [number]
+  -d, --dry-run      Don't actually produce output bundle              [boolean]
+  -r, --report       Generate extended report                          [boolean]
+  -h, --help         Show help                                         [boolean]
+  -v, --version      Show version number                               [boolean]
 ```
 
 ## Configuration
 
-`trace-pkg` can be configured via a YAML, JavaScript, or JSON file.
+`trace-pkg` can be configured via a YAML, JavaScript, or JSON file with additional CLI options.
 
 Here is an illustrative sample:
 
 ```yml
 # Global options
 options:
+  # Number of parallel processes to use for bundling.
+  #
+  # - Defaults to `1` process, which serially runs each bundle.
+  # - `1`/serial mode is run in the same process as `trace-pkg`.
+  # - Setting to `0` will use number of CPUs detected on machine.
+  # - Can be overridden by `--concurrency=<NUMBER>` command line option.
+  concurrency: <NUMBER>
+
   # Current working directory - OPTIONAL (default: `process.cwd()`)
   #
   # Directory from which to read input files as well as output zip bundles.

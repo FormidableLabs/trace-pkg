@@ -1,0 +1,13 @@
+
+packages:
+  one:
+    trace:
+      - "src/one/*.js"
+  two:
+    trace:
+      - "src/two/index.js"
+  three:
+    cwd: src/three
+    output: ../../three.zip
+    include:
+      - "**/*.js"
