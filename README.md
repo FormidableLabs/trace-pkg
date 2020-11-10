@@ -111,6 +111,10 @@ packages:
       - <FILE_OR_PATTERN_ONE>.js
       - <FILE_TWO>.js
 
+    # Package path prefixes up to a directory level to skip tracing on.
+    ignores:
+      - PKG_NAME (or) PKG_NAME/SUB_DIR/
+
   # EXAMPLES
   # ========
   my-function:                # produces `my-function.zip`
@@ -119,7 +123,8 @@ packages:
       - src/config/**/*.js    # trace all JS files in `src/config`
     include:
       - assets/**/*.css       # include all CSS files in `assets`
-
+    ignores:
+      - "aws-sdk"             # Skip pkgs already installed on Lambda
 ```
 
 ## Notes
