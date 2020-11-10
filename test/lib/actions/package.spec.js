@@ -295,6 +295,10 @@ describe("lib/actions/package", () => {
     ]);
   });
 
+  it("ignores missing packages"); // TODO
+  it("ignores skipped packages"); // TODO
+  it("merges ignore configurations"); // TODO
+
   // https://github.com/FormidableLabs/trace-pkg/issues/11
   it("packages projects with symlinks"); // TODO(11)
   it("packages monorepos with symlinks"); // TODO(11)
