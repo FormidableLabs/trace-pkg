@@ -29,6 +29,39 @@ Options:
 
 `trace-pkg` can be configured via a YAML, JavaScript, or JSON file with additional CLI options.
 
+### Configuration options
+
+Configuration options are generally global (`options.<OPTION_NAME>`) and/or per-package (`packages.<PKG_NAME>.<OPTION_NAME>`). When there is both a global _and_ per-package option, the global option is applied _first_ then the per-package option is added to it. For an array option, that means additional unique items are added in. For an object option, this means that for each key in the object additional unique items in the array value are added in.
+
+#### Global options
+
+- `options.cwd` (`String`): Current working directory from which to read input files as well as output zip bundles (default: `process.cwd()`).
+- `options.concurrency` (`Number`): The number of independent package tasks (per function and service) to run off the main execution thread. If `1`, then run tasks serially in main thread. If `2+` run off main thread with `concurrency` number of workers. If `0`, then use "number of CPUs" value. (default: `1`).
+    - Can be overridden from CLI with `--concurrency <NUMBER>`
+- `options.ignores` (`Array<string>`): A set of package path prefixes up to a directory level (e.g., `react` or `mod/lib`) to skip tracing on. This is particularly useful when you are excluding a package like `aws-sdk` that is already provided for your lambda.
+- `options.allowMissing` (`Object.<string, Array<string>>`):
+  `// TODO: IMPLEMENT options.allowMissing`
+- `options.dynamic.resolutions` (`Object.<string, Array<string>>`):
+  `// TODO: IMPLEMENT options.dynamic.resolutions`
+- `options.dynamic.bail` (`Boolean`):
+  `// TODO: IMPLEMENT options.dynamic.bail`
+  `// TODO: --dry-run just reports`
+- `options.collapsed.bail` (`Boolean`):
+  `// TODO: IMPLEMENT options.collapsed.bail`
+  `// TODO: --dry-run just reports`
+
+#### Per-package options
+
+- `packages.<PKG_NAME>.cwd` (`String`): Override global `cwd` option. (default: `option.cwd` value).
+- `packages.<PKG_NAME>.output` (`String`): File path (absolute or relative to `cwd` option) for output bundle. (default: `[packages.<NAME>].zip`).
+- `packages.<PKG_NAME>.include` (`Array<string>`): A list of glob patterns to include/exclude in the package per [fast-glob][] globbing rules. Matched files are **not** traced for further dependencies are suitable for any file type that should end up in the bundle. Use this option for files that won't automatically be traced into your bundle.
+- `packages.<PKG_NAME>.trace` (`Array<string>`): A list of [fast-glob][] glob patterns to match JS files that will be further traced to infer all imported dependencies via static analysis. Use this option to include your source code files that comprises your application.
+- `packages.<PKG_NAME>.ignores` (`Array<string>`): Additional configuration to merge with `options.ignores`.
+- `packages.<PKG_NAME>.allowMissing` (`Object.<string, Array<string>>`): Additional configuration to merge with `options.allowMissing`.
+- `packages.<PKG_NAME>.dynamic.resolutions` (`Object.<string, Array<string>>`): Additional configuration to merge with `options.dynamic.resolutions`.
+
+### Configuration examples
+
 Here is an illustrative sample:
 
 ```yml
@@ -54,13 +87,13 @@ packages:
   # ============
   # Keys should be designated according to zip file name without the ".zip"
   # suffix.
-  <ZIP_FILE_NAME>:
+  <PKG_NAME>:
     # Current working directory - OPTIONAL (default: `options.cwd` value)
     cwd: /ABSOLUTE/PATH (or) ./a/relative/path/to/process.cwd
 
     # Output file path - OPTIONAL (default: `[packages.<NAME>].zip`)
     # File path (absolute or relative to `cwd` option) for output bundle.
-    output: ../artifacts/ZIP_FILE_NAME.zip
+    output: ../artifacts/PKG_NAME.zip
 
     # Absolute or CWD-relative file paths to trace and include all dependent files.
     #
@@ -114,3 +147,4 @@ For those familiar with the [Serverless framework][], this project provides the 
 [trace-deps]: https://github.com/FormidableLabs/trace-deps
 [Serverless framework]: https://www.serverless.com/
 [serverless-jetpack]: https://github.com/FormidableLabs/serverless-jetpack
+[fast-glob]: https://github.com/mrmlnc/fast-glob
