@@ -469,7 +469,7 @@ describe("lib/actions/package", () => {
     ]);
   });
 
-  it.only("resolves dynamic misses", async () => {
+  it("resolves dynamic misses", async () => {
     mock({
       src: {
         "one.js": "module.exports = require('./one/dep');",
