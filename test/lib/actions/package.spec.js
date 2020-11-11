@@ -469,6 +469,7 @@ describe("lib/actions/package", () => {
     ]);
   });
 
+  // TODO(4): Add dynamic.bail to these as well.
   it("resolves dynamic misses", async () => {
     mock({
       src: {
@@ -480,6 +481,14 @@ describe("lib/actions/package", () => {
             module.exports = "dep";
           `,
           "extra-app-file.js": "module.exports = 'extra-app-file';"
+        },
+        two: {
+          "index.js": "module.exports = require('./dep2');",
+          "dep2.js": `
+            require(process.env.DYNAMIC_TWO);
+
+            module.exports = "dep";
+          `
         }
       },
       node_modules: {
@@ -488,7 +497,7 @@ describe("lib/actions/package", () => {
             main: "index.js"
           }),
           "index.js": `
-            require(process.env.DYNAMIC_TWO);
+            require(process.env.DYNAMIC_ANOTHER_DEP);
 
             module.exports = "dep";
           `
@@ -527,16 +536,31 @@ describe("lib/actions/package", () => {
                   ]
                 }
               }
+            },
+            two: {
+              // Different CWD, so dynamic.resolutions are relative to that.
+              cwd: "./src/two",
+              trace: [
+                "index.js"
+              ],
+              dynamic: {
+                resolutions: {
+                  "./dep2.js": [
+                    "dep"
+                  ]
+                }
+              }
             }
           }
         }
       }
     });
 
-    expect(logStub).to.have.been.calledWithMatch("Created 1 packages:");
+    expect(logStub).to.have.been.calledWithMatch("Created 2 packages:");
 
-    expect(await globby("*.zip")).to.eql([
-      "one.zip"
+    expect(await globby("{,src/two/}*.zip")).to.eql([
+      "one.zip",
+      "src/two/two.zip"
     ]);
     expect(zipContents("one.zip")).to.eql([
       "node_modules/another-dep/index.js",
@@ -546,6 +570,14 @@ describe("lib/actions/package", () => {
       "src/one.js",
       "src/one/dep.js",
       "src/one/extra-app-file.js"
+    ]);
+    expect(zipContents("src/two/two.zip")).to.eql([
+      "node_modules/another-dep/index.js",
+      "node_modules/another-dep/package.json",
+      "node_modules/dep/index.js",
+      "node_modules/dep/package.json",
+      "dep2.js",
+      "index.js"
     ]);
   });
 
