@@ -393,6 +393,76 @@ describe("lib/actions/package", () => {
     ]);
   });
 
+  it("skips allowed missing packages", async () => {
+    mock({
+      src: {
+        "one.js": "module.exports = require('./one/dep');",
+        one: {
+          "dep.js": `
+            require('dep');
+
+            module.exports = "dep";
+          `
+        }
+      },
+      node_modules: {
+        dep: {
+          "package.json": JSON.stringify({
+            main: "index.js"
+          }),
+          "index.js": `
+            // Will be packaged.
+            require('present-but-allowed-to-be-missing');
+            // WIll be omitted without error.
+            require('missing');
+
+            module.exports = "dep";
+          `
+        },
+        "present-but-allowed-to-be-missing": {
+          "package.json": JSON.stringify({
+            main: "index.js"
+          }),
+          "index.js": "module.exports = 'present-but-allowed-to-be-missing';"
+        }
+      }
+    });
+
+    await createPackage({
+      opts: {
+        config: {
+          packages: {
+            "one.zip": {
+              trace: [
+                "src/one.js"
+              ],
+              allowMissing: {
+                dep: [
+                  "present-but-allowed-to-be-missing",
+                  "missing"
+                ]
+              }
+            }
+          }
+        }
+      }
+    });
+
+    expect(logStub).to.have.been.calledWithMatch("Created 1 packages:");
+
+    expect(await globby("*.zip")).to.eql([
+      "one.zip"
+    ]);
+    expect(zipContents("one.zip")).to.eql([
+      "node_modules/dep/index.js",
+      "node_modules/dep/package.json",
+      "node_modules/present-but-allowed-to-be-missing/index.js",
+      "node_modules/present-but-allowed-to-be-missing/package.json",
+      "src/one.js",
+      "src/one/dep.js"
+    ]);
+  });
+
   // https://github.com/FormidableLabs/trace-pkg/issues/11
   it("packages projects with symlinks"); // TODO(11)
   it("packages monorepos with symlinks"); // TODO(11)

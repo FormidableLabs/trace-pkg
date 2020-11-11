@@ -39,8 +39,7 @@ Configuration options are generally global (`options.<OPTION_NAME>`) and/or per-
 - `options.concurrency` (`Number`): The number of independent package tasks (per function and service) to run off the main execution thread. If `1`, then run tasks serially in main thread. If `2+` run off main thread with `concurrency` number of workers. If `0`, then use "number of CPUs" value. (default: `1`).
     - Can be overridden from CLI with `--concurrency <NUMBER>`
 - `options.ignores` (`Array<string>`): A set of package path prefixes up to a directory level (e.g., `react` or `mod/lib`) to skip tracing on. This is particularly useful when you are excluding a package like `aws-sdk` that is already provided for your lambda.
-- `options.allowMissing` (`Object.<string, Array<string>>`):
-  `// TODO: IMPLEMENT options.allowMissing`
+- `options.allowMissing` (`Object.<string, Array<string>>`): A way to allow certain packages to have potentially failing dependencies. Specify each object key as a package name and value as an array of dependencies that _might_ be missing on disk. If the sub-dependency is found, then it is included in the bundle (this part distinguishes this option from `ignores`). If not, it is skipped without error.
 - `options.dynamic.resolutions` (`Object.<string, Array<string>>`):
   `// TODO: IMPLEMENT options.dynamic.resolutions`
 - `options.dynamic.bail` (`Boolean`):
