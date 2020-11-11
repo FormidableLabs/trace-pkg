@@ -114,6 +114,12 @@ packages:
     ignores:
       - PKG_NAME (or) PKG_NAME/SUB_DIR/
 
+    # Package keys with sub-dependencies to allow to be missing.
+    allowMissing:
+      PKG_NAME:
+        - SUB_PKG_NAME_ONE
+        - SUB_PKG_NAME_TWO
+
   # EXAMPLES
   # ========
   my-function:                # produces `my-function.zip`
@@ -124,6 +130,10 @@ packages:
       - assets/**/*.css       # include all CSS files in `assets`
     ignores:
       - "aws-sdk"             # Skip pkgs already installed on Lambda
+    allowMissing:
+      "ws":                   # Ignore optional, lazy imported dependencies in `ws` package.
+        - "bufferutil"
+        - "utf-8-validate"
 ```
 
 ## Notes

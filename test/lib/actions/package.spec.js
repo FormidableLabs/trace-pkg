@@ -431,6 +431,13 @@ describe("lib/actions/package", () => {
     await createPackage({
       opts: {
         config: {
+          options: {
+            allowMissing: {
+              dep: [
+                "missing"
+              ]
+            }
+          },
           packages: {
             "one.zip": {
               trace: [
@@ -438,8 +445,7 @@ describe("lib/actions/package", () => {
               ],
               allowMissing: {
                 dep: [
-                  "present-but-allowed-to-be-missing",
-                  "missing"
+                  "present-but-allowed-to-be-missing"
                 ]
               }
             }
