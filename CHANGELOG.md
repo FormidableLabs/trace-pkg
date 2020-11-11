@@ -1,6 +1,11 @@
 Changes
 =======
 
+## UNRELEASED
+
+* Feature: Add `ignores`, `allowMissing` configuration options.
+  [#4](https://github.com/FormidableLabs/trace-pkg/issues/4)
+
 ## 0.1.0
 
 * Feature: Produce verbose `--report` about bundle run.
