@@ -469,6 +469,86 @@ describe("lib/actions/package", () => {
     ]);
   });
 
+  it.only("resolves dynamic misses", async () => {
+    mock({
+      src: {
+        "one.js": "module.exports = require('./one/dep');",
+        one: {
+          "dep.js": `
+            require(process.env.DYNAMIC_ONE);
+
+            module.exports = "dep";
+          `,
+          "extra-app-file.js": "module.exports = 'extra-app-file';"
+        }
+      },
+      node_modules: {
+        dep: {
+          "package.json": JSON.stringify({
+            main: "index.js"
+          }),
+          "index.js": `
+            require(process.env.DYNAMIC_TWO);
+
+            module.exports = "dep";
+          `
+        },
+        "another-dep": {
+          "package.json": JSON.stringify({
+            main: "index.js"
+          }),
+          "index.js": "module.exports = 'another-dep';"
+        }
+      }
+    });
+
+    await createPackage({
+      opts: {
+        config: {
+          options: {
+            dynamic: {
+              resolutions: {
+                "dep/index.js": [
+                  "another-dep"
+                ]
+              }
+            }
+          },
+          packages: {
+            "one.zip": {
+              trace: [
+                "src/one.js"
+              ],
+              dynamic: {
+                resolutions: {
+                  "./src/one/dep.js": [
+                    "dep",
+                    "./extra-app-file.js"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    expect(logStub).to.have.been.calledWithMatch("Created 1 packages:");
+
+    expect(await globby("*.zip")).to.eql([
+      "one.zip"
+    ]);
+    expect(zipContents("one.zip")).to.eql([
+      "node_modules/another-dep/index.js",
+      "node_modules/another-dep/package.json",
+      "node_modules/dep/index.js",
+      "node_modules/dep/package.json",
+      "src/one.js",
+      "src/one/dep.js",
+      "src/one/extra-app-file.js"
+    ]);
+  });
+
   // https://github.com/FormidableLabs/trace-pkg/issues/11
   it("packages projects with symlinks"); // TODO(11)
   it("packages monorepos with symlinks"); // TODO(11)
