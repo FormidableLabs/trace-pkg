@@ -1,7 +1,7 @@
 Changes
 =======
 
-## UNRELEASED
+## 0.1.1
 
 * Feature: Add `ignores`, `allowMissing` configuration options.
   [#4](https://github.com/FormidableLabs/trace-pkg/issues/4)
