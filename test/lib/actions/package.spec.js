@@ -581,6 +581,66 @@ describe("lib/actions/package", () => {
     ]);
   });
 
+  it("displays dynamic misses in report", async () => {
+    mock({
+      src: {
+        "one.js": "module.exports = require('./one/dep');",
+        one: {
+          "dep.js": `
+            require('dep');
+
+            module.exports = "dep";
+          `
+        }
+      },
+      node_modules: {
+        dep: {
+          "package.json": JSON.stringify({
+            main: "index.js"
+          }),
+          "index.js": `
+            require(process.env.DYNAMIC);
+
+            module.exports = "dep";
+          `
+        }
+      }
+    });
+
+    await createPackage({
+      opts: {
+        report: true,
+        dryRun: true,
+        config: {
+          packages: {
+            "one.zip": {
+              trace: [
+                "src/one.js"
+              ]
+            }
+          }
+        }
+      }
+    });
+
+    const cwd = process.cwd();
+
+    // Log output
+    expect(logStub)
+      .to.have.been.calledWithMatch("WARN", "Dynamic misses in one.zip:").and
+      .to.have.been.calledWithMatch(
+        "WARN",
+        `${cwd}/node_modules/dep/index.js\n  [2:12]: require(process.env.DYNAMIC)`
+      );
+
+    // Report output
+    expect(logStub).to.have.been.calledWithMatch(`
+        misses:
+          ${cwd}/node_modules/dep/index.js:
+            - "[2:12]: require(process.env.DYNAMIC)"
+    `.trim().replace(/^ {6}/gm, ""));
+  });
+
   // https://github.com/FormidableLabs/trace-pkg/issues/11
   it("packages projects with symlinks"); // TODO(11)
   it("packages monorepos with symlinks"); // TODO(11)
