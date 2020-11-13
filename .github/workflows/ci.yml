@@ -31,10 +31,10 @@ jobs:
     - run: node bin/trace-pkg.js -h
 
     # CI
-    - if: startsWith(runner.os, 'Windows')
+    - if: ${{ startsWith(runner.os, 'Windows') }}
       run: yarn check-ci
       shell: cmd
-    - if: ! startsWith(runner.os, 'Windows')
+    - if: ${{ !startsWith(runner.os, 'Windows') }}
       run: yarn check-ci
     - run: yarn codecov
       env:
