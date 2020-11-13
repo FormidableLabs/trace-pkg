@@ -9,7 +9,7 @@ jobs:
 
     strategy:
       matrix:
-        platform: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest]
         node-version: [10.x, 12.x, 14.x, 15.x]
 
     steps:
@@ -31,11 +31,7 @@ jobs:
     - run: node bin/trace-pkg.js -h
 
     # CI
-    - if: runner.os == 'Windows'
-      run: yarn check-ci
-      shell: cmd
-    - if: runner.os == 'Linux'
-      run: yarn check-ci
+    - run: yarn check-ci
     - run: yarn codecov
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
