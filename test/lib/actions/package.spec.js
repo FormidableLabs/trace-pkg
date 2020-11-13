@@ -637,10 +637,10 @@ describe("lib/actions/package", () => {
 
     // Report output
     expect(logStub).to.have.been.calledWithMatch(`
-        misses:
-          ${indexPath}:
-            - "[2:12]: require(process.env.DYNAMIC)"
-    `.trim().replace(/^ {6}/gm, ""));
+      missed:
+        ${indexPath}:
+          - "[2:12]: require(process.env.DYNAMIC)"
+    `.trim().replace(/^ {2}/gm, ""));
   });
 
   // https://github.com/FormidableLabs/trace-pkg/issues/11
