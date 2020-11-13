@@ -43,7 +43,7 @@ describe("e2e/trace-pkg", () => {
         Created 3 packages:
         - one: one.zip (1 files)
         - two: two.zip (3 files)
-        - three: ../../three.zip (1 files)
+        - three: ${path.normalize("../../three.zip")} (1 files)
       `.trim().replace(/^ {8}/gm, ""));
 
       expect(stderr).to.equal("");

@@ -1,5 +1,7 @@
 "use strict";
 
+const path = require("path");
+
 const mock = require("mock-fs");
 const sinon = require("sinon");
 const globby = require("globby");
@@ -623,20 +625,20 @@ describe("lib/actions/package", () => {
       }
     });
 
-    const cwd = process.cwd();
+    const indexPath = path.normalize(path.resolve("node_modules/dep/index.js"));
 
     // Log output
     expect(logStub)
       .to.have.been.calledWithMatch("WARN", "Dynamic misses in one.zip:").and
       .to.have.been.calledWithMatch(
         "WARN",
-        `${cwd}/node_modules/dep/index.js\n  [2:12]: require(process.env.DYNAMIC)`
+        `${indexPath}\n  [2:12]: require(process.env.DYNAMIC)`
       );
 
     // Report output
     expect(logStub).to.have.been.calledWithMatch(`
         misses:
-          ${cwd}/node_modules/dep/index.js:
+          ${indexPath}:
             - "[2:12]: require(process.env.DYNAMIC)"
     `.trim().replace(/^ {6}/gm, ""));
   });
