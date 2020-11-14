@@ -690,12 +690,7 @@ describe("lib/actions/package", () => {
         config: {
           options: {
             dynamic: {
-              bail: true,
-              resolutions: {
-                "dep/index.js": [
-                  "another-dep"
-                ]
-              }
+              bail: true
             }
           },
           packages: {
@@ -711,9 +706,13 @@ describe("lib/actions/package", () => {
                 "index.js"
               ],
               dynamic: {
+                bail: true,
                 resolutions: {
                   "./dep2.js": [
                     "dep"
+                  ],
+                  "dep/index.js": [
+                    "another-dep"
                   ]
                 }
               }
