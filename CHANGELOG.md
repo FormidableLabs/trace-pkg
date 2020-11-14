@@ -1,7 +1,7 @@
 Changes
 =======
 
-## UNRELEASED
+## 0.2.0
 
 * Feature: Add `misses` report to `--report` and log output.
 * Feature: Add `dynamic.resolutions` configuration option.
