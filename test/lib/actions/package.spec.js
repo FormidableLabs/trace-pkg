@@ -643,11 +643,14 @@ describe("lib/actions/package", () => {
     `.trim().replace(/^ {2}/gm, ""));
   });
 
+  it("errors on unresolved dynamic misses"); // TODO
+  it("allows on unresolved dynamic misses with package override of bail"); // TODO
+
+  // https://github.com/FormidableLabs/trace-pkg/issues/3
+  it("errors on collapsed files in zip bundle"); // TODO(3)
+
   // https://github.com/FormidableLabs/trace-pkg/issues/11
   it("packages projects with symlinks"); // TODO(11)
   it("packages monorepos with symlinks"); // TODO(11)
   it("packages monorepos with interproject dependencies"); // TODO(11)
-
-  // https://github.com/FormidableLabs/trace-pkg/issues/3
-  it("errors on collapsed files in zip bundle"); // TODO(3)
 });

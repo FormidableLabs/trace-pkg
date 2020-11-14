@@ -42,16 +42,17 @@ Configuration options are generally global (`options.<OPTION_NAME>`) and/or per-
 - `options.allowMissing` (`Object.<string, Array<string>>`): A way to allow certain packages to have potentially failing dependencies. Specify each object key as a package name and value as an array of dependencies that _might_ be missing on disk. If the sub-dependency is found, then it is included in the bundle (this part distinguishes this option from `ignores`). If not, it is skipped without error.
 - `options.dynamic.resolutions` (`Object.<string, Array<string>>`): Handle dynamic import misses by providing a key to match misses on and an array of additional glob patterns to trace and include in the application bundle.
     - _Application source files_: If a miss is an application source file (e.g., not within `node_modules`), specify the **relative path** (from the package-level `cwd`) to it like `"./src/server/router.js": [/* array of patterns */]`.
-        * **Note**: To be an application source path, it **must** be prefixed with a dot (e.g., `./src/server.js`, `../lower/src/server.js`). Basically, like the Node.js `require()` rules go for a local path file vs. a package dependency.
-        * **Warning**: When resolving relative paths, the **package-level** `cwd` value applies. If you have different `cwd` configurations per-packaged/globally, then (dot-prefixed) resolution keys should only be specified in `packages.<PKG_NAME>.dynamic.resolutions` and **not** `options.dynamic.resolutions`.
+        - **Note**: To be an application source path, it **must** be prefixed with a dot (e.g., `./src/server.js`, `../lower/src/server.js`). Basically, like the Node.js `require()` rules go for a local path file vs. a package dependency.
+        - **Warning**: When resolving relative paths, the **package-level** `cwd` value applies. If you have different `cwd` configurations per-packaged/globally, then (dot-prefixed) resolution keys should only be specified in `packages.<PKG_NAME>.dynamic.resolutions` and **not** `options.dynamic.resolutions`.
     * _Dependency packages_: If a miss is part of a dependency (e.g., an `npm` package placed within `node_modules`), specify the **package name** first (without including `node_modules`) and then trailing path to file at issue like `"bunyan/lib/bunyan.js": [/* array of patterns */]`.
     * _Ignoring dynamic import misses_: If you just want to ignore the missed dynamic imports for a given application source file or package, just specify and empty array `[]` or falsy value.
-- `options.dynamic.bail` (`Boolean`):
-  `// TODO: IMPLEMENT options.dynamic.bail`
-  `// TODO: --dry-run just reports`
+- `options.dynamic.bail` (`Boolean`): Exit CLI with error if dynamic import misses are detected.
+    - `--dry-run` option will not exit with error. Best paired with `--dry-run` to produce a full report to diagnose and resolve dynamic misses.
+    - `// TODO: write up handling dynamic misses section like jetpack has with link here and in log message`
 - `options.collapsed.bail` (`Boolean`):
   `// TODO: IMPLEMENT options.collapsed.bail`
   `// TODO: --dry-run just reports`
+  `// TODO: write up handling collapsed conflicts section like jetpack has with link here and in log message`
 
 #### Per-package options
 
@@ -62,6 +63,7 @@ Configuration options are generally global (`options.<OPTION_NAME>`) and/or per-
 - `packages.<PKG_NAME>.ignores` (`Array<string>`): Additional configuration to merge with `options.ignores`.
 - `packages.<PKG_NAME>.allowMissing` (`Object.<string, Array<string>>`): Additional configuration to merge with `options.allowMissing`.
 - `packages.<PKG_NAME>.dynamic.resolutions` (`Object.<string, Array<string>>`): Additional configuration to merge with `options.dynamic.resolutions`.
+- `packages.<PKG_NAME>.dynamic.bail` (`Boolean`): Override `options.dynamic.bail` value.
 
 ### Configuration examples
 
@@ -82,6 +84,38 @@ options:
   #
   # Directory from which to read input files as well as output zip bundles.
   cwd: /ABSOLUTE/PATH (or) ./a/relative/path/to/process.cwd
+
+  # Package path prefixes up to a directory level to skip tracing on.
+  ignores:
+    - PKG_NAME (or) PKG_NAME/SUB_DIR/
+
+  # Package keys with sub-dependencies to allow to be missing.
+  allowMissing:
+    PKG_NAME:
+      - SUB_PKG_NAME_ONE
+      - SUB_PKG_NAME_TWO
+
+  dynamic:
+    # Error if any dynamic misses are unresolved (default: `false`)
+    bail: true (or) false
+
+    # Resolve encountered dynamic import misses, either by tracing
+    # additional files, or ignoring after confirmation of safety.
+    resolutions:
+      # **Application Source**
+      #
+      # Specify keys as relative path to application source files starting
+      # with a dot.
+      "./RELATIVE/PATH/TO/FILE.js":
+        - "../SOME/OTHER/RELATIVE/FILE.js"
+        - "PKG_NAME" (or) "PGK_NAME/WITH/PATH.js"
+
+      # **Dependencies**
+      #
+      # Specify keys as `PKG_NAME/path/to/file.js`.
+      "PGK_NAME/WITH/PATH.js":
+        - "../SOME/OTHER/RELATIVE/FILE.js"
+        - "PKG_NAME" (or) "PGK_NAME/WITH/PATH.js"
 
 # Each "package" corresponds to an outputted zip file. It can contain an number
 # of traced or straight included files.
@@ -114,34 +148,12 @@ packages:
       - <FILE_OR_PATTERN_ONE>.js
       - <FILE_TWO>.js
 
-    # Package path prefixes up to a directory level to skip tracing on.
-    ignores:
-      - PKG_NAME (or) PKG_NAME/SUB_DIR/
-
-    # Package keys with sub-dependencies to allow to be missing.
-    allowMissing:
-      PKG_NAME:
-        - SUB_PKG_NAME_ONE
-        - SUB_PKG_NAME_TWO
-
+    # Extensions of `options.*` fields below...
+    ignores: []
+    allowMissing: {}
     dynamic:
-      # Resolve encountered dynamic import misses, either by tracing
-      # additional files, or ignoring after confirmation of safety.
-      resolutions:
-        # **Application Source**
-        #
-        # Specify keys as relative path to application source files starting
-        # with a dot.
-        "./RELATIVE/PATH/TO/FILE.js":
-          - "../SOME/OTHER/RELATIVE/FILE.js"
-          - "PKG_NAME" (or) "PGK_NAME/WITH/PATH.js"
-
-        # **Dependencies**
-        #
-        # Specify keys as `PKG_NAME/path/to/file.js`.
-        "PGK_NAME/WITH/PATH.js":
-          - "../SOME/OTHER/RELATIVE/FILE.js"
-          - "PKG_NAME" (or) "PGK_NAME/WITH/PATH.js"
+      bail: true
+      resolutions: {}
 
   # EXAMPLES
   # ========
@@ -162,32 +174,34 @@ packages:
         - "utf-8-validate"
 
     dynamic:
-        resolutions:
-          # **Application Source**
-          "./src/server/config.js":
-            # Manually trace all configuration files for bespoke configuration
-            # application code. (Note these are relative to the file key!)
-            - "../../config/default.js"
-            - "../../config/production.js"
+      bail: true              # Error on unresolved dynamic misses.
 
-          # Ignore dynamic import misses with empty array.
-          "./src/something-else.js": []
+      resolutions:
+        # **Application Source**
+        "./src/server/config.js":
+          # Manually trace all configuration files for bespoke configuration
+          # application code. (Note these are relative to the file key!)
+          - "../../config/default.js"
+          - "../../config/production.js"
 
-          # **Dependencies**
-          "bunyan/lib/bunyan.js":
-            # - node_modules/bunyan/lib/bunyan.js [79:17]: require('dtrace-provider' + '')
-            # - node_modules/bunyan/lib/bunyan.js [100:13]: require('mv' + '')
-            # - node_modules/bunyan/lib/bunyan.js [106:27]: require('source-map-support' + '')
-            #
-            # These are all just try/catch-ed permissive require's meant to be
-            # excluded in browser. We manually add them in here.
-            - "dtrace-provider"
-            - "mv"
-            - "source-map-support"
+        # Ignore dynamic import misses with empty array.
+        "./src/something-else.js": []
 
-          # Ignore: we aren't using themes.
-          # - node_modules/colors/lib/colors.js [127:29]: require(theme)
-          "colors/lib/colors.js": []
+        # **Dependencies**
+        "bunyan/lib/bunyan.js":
+          # - node_modules/bunyan/lib/bunyan.js [79:17]: require('dtrace-provider' + '')
+          # - node_modules/bunyan/lib/bunyan.js [100:13]: require('mv' + '')
+          # - node_modules/bunyan/lib/bunyan.js [106:27]: require('source-map-support' + '')
+          #
+          # These are all just try/catch-ed permissive require's meant to be
+          # excluded in browser. We manually add them in here.
+          - "dtrace-provider"
+          - "mv"
+          - "source-map-support"
+
+        # Ignore: we aren't using themes.
+        # - node_modules/colors/lib/colors.js [127:29]: require(theme)
+        "colors/lib/colors.js": []
 ```
 
 ## Notes
