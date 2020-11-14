@@ -1,6 +1,12 @@
 Changes
 =======
 
+## UNRELEASED
+
+* Feature: Add `misses` report to `--report` and log output.
+* Feature: Add `dynamic.resolutions` configuration option.
+  [#4](https://github.com/FormidableLabs/trace-pkg/issues/4)
+
 ## 0.1.1
 
 * Feature: Add `ignores`, `allowMissing` configuration options.

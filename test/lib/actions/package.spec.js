@@ -1,5 +1,7 @@
 "use strict";
 
+const path = require("path");
+
 const mock = require("mock-fs");
 const sinon = require("sinon");
 const globby = require("globby");
@@ -467,6 +469,178 @@ describe("lib/actions/package", () => {
       "src/one.js",
       "src/one/dep.js"
     ]);
+  });
+
+  // TODO(4): Add dynamic.bail to these as well.
+  it("resolves dynamic misses", async () => {
+    mock({
+      src: {
+        "one.js": "module.exports = require('./one/dep');",
+        one: {
+          "dep.js": `
+            require(process.env.DYNAMIC_ONE);
+
+            module.exports = "dep";
+          `,
+          "extra-app-file.js": "module.exports = 'extra-app-file';"
+        },
+        two: {
+          "index.js": "module.exports = require('./dep2');",
+          "dep2.js": `
+            require(process.env.DYNAMIC_TWO);
+
+            module.exports = "dep";
+          `
+        }
+      },
+      node_modules: {
+        dep: {
+          "package.json": JSON.stringify({
+            main: "index.js"
+          }),
+          "index.js": `
+            require(process.env.DYNAMIC_ANOTHER_DEP);
+
+            module.exports = "dep";
+          `
+        },
+        "another-dep": {
+          "package.json": JSON.stringify({
+            main: "index.js"
+          }),
+          "index.js": "module.exports = 'another-dep';"
+        }
+      }
+    });
+
+    await createPackage({
+      opts: {
+        config: {
+          options: {
+            dynamic: {
+              resolutions: {
+                "dep/index.js": [
+                  "another-dep"
+                ]
+              }
+            }
+          },
+          packages: {
+            "one.zip": {
+              trace: [
+                "src/one.js"
+              ],
+              dynamic: {
+                resolutions: {
+                  "./src/one/dep.js": [
+                    "dep",
+                    "./extra-app-file.js"
+                  ]
+                }
+              }
+            },
+            two: {
+              // Different CWD, so dynamic.resolutions are relative to that.
+              cwd: "./src/two",
+              trace: [
+                "index.js"
+              ],
+              dynamic: {
+                resolutions: {
+                  "./dep2.js": [
+                    "dep"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    expect(logStub).to.have.been.calledWithMatch("Created 2 packages:");
+
+    expect(await globby("{,src/two/}*.zip")).to.eql([
+      "one.zip",
+      "src/two/two.zip"
+    ]);
+    expect(zipContents("one.zip")).to.eql([
+      "node_modules/another-dep/index.js",
+      "node_modules/another-dep/package.json",
+      "node_modules/dep/index.js",
+      "node_modules/dep/package.json",
+      "src/one.js",
+      "src/one/dep.js",
+      "src/one/extra-app-file.js"
+    ]);
+    expect(zipContents("src/two/two.zip")).to.eql([
+      "node_modules/another-dep/index.js",
+      "node_modules/another-dep/package.json",
+      "node_modules/dep/index.js",
+      "node_modules/dep/package.json",
+      "dep2.js",
+      "index.js"
+    ]);
+  });
+
+  it("displays dynamic misses in report", async () => {
+    mock({
+      src: {
+        "one.js": "module.exports = require('./one/dep');",
+        one: {
+          "dep.js": `
+            require('dep');
+
+            module.exports = "dep";
+          `
+        }
+      },
+      node_modules: {
+        dep: {
+          "package.json": JSON.stringify({
+            main: "index.js"
+          }),
+          "index.js": `
+            require(process.env.DYNAMIC);
+
+            module.exports = "dep";
+          `
+        }
+      }
+    });
+
+    await createPackage({
+      opts: {
+        report: true,
+        dryRun: true,
+        config: {
+          packages: {
+            "one.zip": {
+              trace: [
+                "src/one.js"
+              ]
+            }
+          }
+        }
+      }
+    });
+
+    const indexPath = path.normalize(path.resolve("node_modules/dep/index.js"));
+
+    // Log output
+    expect(logStub)
+      .to.have.been.calledWithMatch("WARN", "Dynamic misses in one.zip:").and
+      .to.have.been.calledWithMatch(
+        "WARN",
+        `${indexPath}\n  [2:12]: require(process.env.DYNAMIC)`
+      );
+
+    // Report output
+    expect(logStub).to.have.been.calledWithMatch(`
+      missed:
+        ${indexPath}:
+          - "[2:12]: require(process.env.DYNAMIC)"
+    `.trim().replace(/^ {2}/gm, ""));
   });
 
   // https://github.com/FormidableLabs/trace-pkg/issues/11
