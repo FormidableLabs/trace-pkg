@@ -471,7 +471,6 @@ describe("lib/actions/package", () => {
     ]);
   });
 
-  // TODO(4): Add dynamic.bail to these as well.
   it("resolves dynamic misses", async () => {
     mock({
       src: {
@@ -643,7 +642,90 @@ describe("lib/actions/package", () => {
     `.trim().replace(/^ {2}/gm, ""));
   });
 
-  it("errors on unresolved dynamic misses"); // TODO
+  it("errors on unresolved dynamic misses", async () => {
+    const errStub = sandbox.stub(console, "error");
+
+    mock({
+      src: {
+        "one.js": "module.exports = require('./one/dep');",
+        one: {
+          "dep.js": `
+            require(process.env.DYNAMIC_ONE);
+
+            module.exports = "dep";
+          `,
+          "extra-app-file.js": "module.exports = 'extra-app-file';"
+        },
+        two: {
+          "index.js": "module.exports = require('./dep2');",
+          "dep2.js": `
+            require(process.env.DYNAMIC_TWO);
+
+            module.exports = "dep";
+          `
+        }
+      },
+      node_modules: {
+        dep: {
+          "package.json": JSON.stringify({
+            main: "index.js"
+          }),
+          "index.js": `
+            require(process.env.DYNAMIC_ANOTHER_DEP);
+
+            module.exports = "dep";
+          `
+        },
+        "another-dep": {
+          "package.json": JSON.stringify({
+            main: "index.js"
+          }),
+          "index.js": "module.exports = 'another-dep';"
+        }
+      }
+    });
+
+    await expect(createPackage({
+      opts: {
+        config: {
+          options: {
+            dynamic: {
+              bail: true,
+              resolutions: {
+                "dep/index.js": [
+                  "another-dep"
+                ]
+              }
+            }
+          },
+          packages: {
+            "one.zip": {
+              trace: [
+                "src/one.js"
+              ]
+            },
+            two: {
+              // Different CWD, so dynamic.resolutions are relative to that.
+              cwd: "./src/two",
+              trace: [
+                "index.js"
+              ],
+              dynamic: {
+                resolutions: {
+                  "./dep2.js": [
+                    "dep"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    })).to.eventually.be.rejectedWith("Unresolved dynamic misses");
+
+    expect(errStub).to.be.calledWithMatch("ERROR", "Unresolved dynamic misses in one.zip: [");
+  });
+
   it("allows on unresolved dynamic misses with package override of bail"); // TODO
 
   // https://github.com/FormidableLabs/trace-pkg/issues/3
