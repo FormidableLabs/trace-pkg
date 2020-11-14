@@ -726,7 +726,112 @@ describe("lib/actions/package", () => {
     expect(errStub).to.be.calledWithMatch("ERROR", "Unresolved dynamic misses in one.zip: [");
   });
 
-  it("allows on unresolved dynamic misses with package override of bail"); // TODO
+  it("allows on unresolved dynamic misses with package override of bail", async () => {
+    mock({
+      src: {
+        "one.js": "module.exports = require('./one/dep');",
+        one: {
+          "dep.js": `
+            require(process.env.DYNAMIC_ONE);
+
+            module.exports = "dep";
+          `,
+          "extra-app-file.js": "module.exports = 'extra-app-file';"
+        },
+        two: {
+          "index.js": "module.exports = require('./dep2');",
+          "dep2.js": `
+            require(process.env.DYNAMIC_TWO);
+
+            module.exports = "dep";
+          `
+        }
+      },
+      node_modules: {
+        dep: {
+          "package.json": JSON.stringify({
+            main: "index.js"
+          }),
+          "index.js": `
+            require(process.env.DYNAMIC_ANOTHER_DEP);
+
+            module.exports = "dep";
+          `
+        },
+        "another-dep": {
+          "package.json": JSON.stringify({
+            main: "index.js"
+          }),
+          "index.js": "module.exports = 'another-dep';"
+        }
+      }
+    });
+
+    await createPackage({
+      opts: {
+        config: {
+          options: {
+            dynamic: {
+              bail: true,
+              resolutions: {
+                "dep/index.js": [
+                  "another-dep"
+                ]
+              }
+            }
+          },
+          packages: {
+            "one.zip": {
+              trace: [
+                "src/one.js"
+              ],
+              dynamic: {
+                resolutions: {
+                  "./src/one/dep.js": [
+                    "dep",
+                    "./extra-app-file.js"
+                  ]
+                }
+              }
+            },
+            two: {
+              // Different CWD, so dynamic.resolutions are relative to that.
+              cwd: "./src/two",
+              trace: [
+                "index.js"
+              ],
+              dynamic: {
+                // Allow unresolved misses.
+                bail: false
+              }
+            }
+          }
+        }
+      }
+    });
+
+    expect(logStub)
+      .to.have.been.calledWithMatch("Created 2 packages:").and
+      .to.have.been.calledWithMatch("WARN", "Dynamic misses in two:");
+
+    expect(await globby("{,src/two/}*.zip")).to.eql([
+      "one.zip",
+      "src/two/two.zip"
+    ]);
+    expect(zipContents("one.zip")).to.eql([
+      "node_modules/another-dep/index.js",
+      "node_modules/another-dep/package.json",
+      "node_modules/dep/index.js",
+      "node_modules/dep/package.json",
+      "src/one.js",
+      "src/one/dep.js",
+      "src/one/extra-app-file.js"
+    ]);
+    expect(zipContents("src/two/two.zip")).to.eql([
+      "dep2.js",
+      "index.js"
+    ]);
+  });
 
   // https://github.com/FormidableLabs/trace-pkg/issues/3
   it("errors on collapsed files in zip bundle"); // TODO(3)
