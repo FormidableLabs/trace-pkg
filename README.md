@@ -68,8 +68,7 @@ Configuration options are generally global (`options.<OPTION_NAME>`) and/or per-
         - **Warning**: When resolving relative paths, the **package-level** `cwd` value applies. If you have different `cwd` configurations per-packaged/globally, then (dot-prefixed) resolution keys should only be specified in `packages.<PKG_NAME>.dynamic.resolutions` and **not** `options.dynamic.resolutions`.
     * _Dependency packages_: If a miss is part of a dependency (e.g., an `npm` package placed within `node_modules`), specify the **package name** first (without including `node_modules`) and then trailing path to file at issue like `"bunyan/lib/bunyan.js": [/* array of patterns */]`.
     * _Ignoring dynamic import misses_: If you just want to ignore the missed dynamic imports for a given application source file or package, just specify and empty array `[]` or falsy value.
-- `options.dynamic.bail` (`Boolean`): Exit CLI with error if dynamic import misses are detected.
-    - `// TODO: write up handling dynamic misses section like jetpack has with link here and in log message`
+- `options.dynamic.bail` (`Boolean`): Exit CLI with error if dynamic import misses are detected. (default: `false`). See [discussion below](#handling-dynamic-import-misses) regarding handling.
 - `options.collapsed.bail` (`Boolean`):
     - `// TODO: IMPLEMENT options.collapsed.bail`
     - `// TODO: write up handling collapsed conflicts section like jetpack has with link here and in log message`
