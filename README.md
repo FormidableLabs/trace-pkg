@@ -47,12 +47,10 @@ Configuration options are generally global (`options.<OPTION_NAME>`) and/or per-
     * _Dependency packages_: If a miss is part of a dependency (e.g., an `npm` package placed within `node_modules`), specify the **package name** first (without including `node_modules`) and then trailing path to file at issue like `"bunyan/lib/bunyan.js": [/* array of patterns */]`.
     * _Ignoring dynamic import misses_: If you just want to ignore the missed dynamic imports for a given application source file or package, just specify and empty array `[]` or falsy value.
 - `options.dynamic.bail` (`Boolean`): Exit CLI with error if dynamic import misses are detected.
-    - `--dry-run` option will not exit with error. Best paired with `--dry-run` to produce a full report to diagnose and resolve dynamic misses.
     - `// TODO: write up handling dynamic misses section like jetpack has with link here and in log message`
 - `options.collapsed.bail` (`Boolean`):
-  `// TODO: IMPLEMENT options.collapsed.bail`
-  `// TODO: --dry-run just reports`
-  `// TODO: write up handling collapsed conflicts section like jetpack has with link here and in log message`
+    - `// TODO: IMPLEMENT options.collapsed.bail`
+    - `// TODO: write up handling collapsed conflicts section like jetpack has with link here and in log message`
 
 #### Per-package options
 
