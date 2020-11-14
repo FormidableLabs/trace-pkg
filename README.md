@@ -244,7 +244,7 @@ If you are using the `serverless` framework, definitely give `serverless-jetpack
 [npm_site]: http://badge.fury.io/js/trace-pkg
 [actions_img]: https://github.com/FormidableLabs/trace-pkg/workflows/CI/badge.svg
 [actions_site]: https://github.com/FormidableLabs/trace-pkg/actions
-[cov_img]: https://codecov.io/gh/FormidableLabs/trace-pkg/branch/master/graph/badge.svg
+[cov_img]: https://codecov.io/gh/FormidableLabs/trace-pkg/branch/main/graph/badge.svg
 [cov_site]: https://codecov.io/gh/FormidableLabs/trace-pkg
 
 [trace-deps]: https://github.com/FormidableLabs/trace-deps
