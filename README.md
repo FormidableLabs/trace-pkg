@@ -5,11 +5,32 @@ trace-pkg 📦
 [![Actions Status][actions_img]][actions_site]
 [![Coverage Status][cov_img]][cov_site]
 
-A dependency tracing packager for Node.js source files.
+A blazingly fast Node.js zip application packager for AWS Lambda, etc.
+
+- 🔥 **Fast**: Efficient, concurrent packaging with full multi-cpu utilization.
+- 🔎 **Small**: Dependency tracing to include **only** the files your application uses.
+- ⚙️ **Flexible**: Highly tunable configuration/introspection for dynamic, optional import handling.
 
 ## Overview
 
 `trace-pkg` is a packager for Node.js applications. It ingests entry point files, then uses the [trace-deps][] library to infer all other source files imported at runtime, and then creates a zip bundle suitable for use with AWS Lambda, Serverless, etc.
+
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+
+- [Usage](#usage)
+- [Configuration](#configuration)
+  - [Configuration options](#configuration-options)
+    - [Global options](#global-options)
+    - [Per-package options](#per-package-options)
+  - [Configuration examples](#configuration-examples)
+- [Notes](#notes)
+  - [Packaged files](#packaged-files)
+  - [Related projects](#related-projects)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 
 ## Usage
 
@@ -206,16 +227,18 @@ packages:
 
 ### Packaged files
 
-Like the [Serverless framework][], `trace-pkg` attempts to create deteriministic zip files wherein the same source files should produce a byte-wise identical zip file. We do this via two primary means:
+Like the [Serverless framework][], `trace-pkg` attempts to create deterministic zip files wherein the same source files should produce a byte-wise identical zip file. We do this via two primary means:
 
 - Source files are sorted in order of insertion into the zip archive.
 - Source files have `mtime` file metadata set to the UNIX epoch.
 
-### Comparison to serverless-jetpack
+### Related projects
 
-For those familiar with the [Serverless framework][], this project provides the packaging speed of the [serverless-jetpack][] plugin as both use the same [underlying tracing library][trace-deps], just without the actual Serverless Framework.
+**[serverless-jetpack][]**
 
-- [ ] TODO: Document differences in configuration.
+For those familiar with the [Serverless framework][], this project provides the packaging speed of the [serverless-jetpack][] plugin as both use the same [underlying tracing library][trace-deps], just without the actual Serverless Framework. This project was created from the successes of `serverless-jetpack`'s [tracing mode][] when our use cases needed standalone packages for Terraform-based AWS Lambda deployments that didn't use the `serverless` framework. Much of our documentation is incorporated and refactored slightly for the minor differences in `trace-pkg`.
+
+If you are using the `serverless` framework, definitely give `serverless-jetpack` a whirl!
 
 [npm_img]: https://badge.fury.io/js/trace-pkg.svg
 [npm_site]: http://badge.fury.io/js/trace-pkg
@@ -227,4 +250,5 @@ For those familiar with the [Serverless framework][], this project provides the 
 [trace-deps]: https://github.com/FormidableLabs/trace-deps
 [Serverless framework]: https://www.serverless.com/
 [serverless-jetpack]: https://github.com/FormidableLabs/serverless-jetpack
+[tracing mode]: https://github.com/FormidableLabs/serverless-jetpack#tracing-mode
 [fast-glob]: https://github.com/mrmlnc/fast-glob
