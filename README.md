@@ -58,7 +58,7 @@ Configuration options are generally global (`options.<OPTION_NAME>`) and/or per-
 #### Global options
 
 - `options.cwd` (`String`): Current working directory from which to read input files as well as output zip bundles (default: `process.cwd()`).
-- `options.concurrency` (`Number`): The number of independent package tasks (per function and service) to run off the main execution thread. If `1`, then run tasks serially in main thread. If `2+` run off main thread with `concurrency` number of workers. If `0`, then use "number of CPUs" value. (default: `1`).
+- `options.concurrency` (`Number`): The number of independent package tasks to run off the main execution thread. If `1`, then run tasks serially in main thread. If `2+` run off main thread with `concurrency` number of workers. If `0`, then use "number of CPUs" value. (default: `1`).
     - Can be overridden from CLI with `--concurrency <NUMBER>`
 - `options.ignores` (`Array<string>`): A set of package path prefixes up to a directory level (e.g., `react` or `mod/lib`) to skip tracing on. This is particularly useful when you are excluding a package like `aws-sdk` that is already provided for your lambda.
 - `options.allowMissing` (`Object.<string, Array<string>>`): A way to allow certain packages to have potentially failing dependencies. Specify each object key as a package name and value as an array of dependencies that _might_ be missing on disk. If the sub-dependency is found, then it is included in the bundle (this part distinguishes this option from `ignores`). If not, it is skipped without error.
@@ -227,100 +227,97 @@ packages:
 
 ### Handling dynamic import misses
 
-**TODO: REFACTOR BELOW TO TRACE-PKG**
-
-<!--
-
-Dynamic imports that use variables or runtime execution like `require(A_VARIABLE)` or ``import(`template_${VARIABLE}`)`` cannot be used by Jetpack to infer what the underlying dependency files are for inclusion in the bundle. That means some level of developer work to handle.
+Dynamic imports that use variables or runtime execution like `require(A_VARIABLE)` or ``import(`template_${VARIABLE}`)`` cannot be used by `trace-pkg` to infer what the underlying dependency files are for inclusion in the bundle. That means some level of developer research and configuration to handle.
 
 **Identify**
 
-The first step is to be aware and watch for dynamic import misses. Conveniently, Jetpack logs warnings like the following:
+The first step is to be aware and watch for dynamic import misses. Conveniently, `trace-pkg` logs warnings like the following:
 
 ```
-Serverless: [serverless-jetpack] WARNING: Found 6 dependency packages with tracing misses in .serverless/FN_NAME.zip! Please see logs and read: https://npm.im/serverless-jetpack#handling-dynamic-import-misses
-Serverless: [serverless-jetpack] .serverless/FN_NAME.zip dependency package tracing misses: [* ... */,"colors","bunyan",/* ... */]
+WARN Dynamic misses in .package/one:
+- /PATH/TO/PROJECT/node_modules/bunyan/lib/bunyan.js
+  [79:17]: require('dtrace-provider' + '')
+  [100:13]: require('mv' + '')
+  [106:27]: require('source-map-support' + '')
+WARN To resolve dynamic import misses, see logs & read: https://npm.im/trace-pkg#handling-dynamic-import-misses
 ```
 
 and produces combined `--report` output like:
 
-```md
-### Tracing Dynamic Misses (`6` packages): Dependencies
+```yaml
+## Output
 
-...
-- ../node_modules/aws-xray-sdk-core/node_modules/colors/lib/colors.js [127:29]: require(theme)
-- ../node_modules/bunyan/lib/bunyan.js [79:17]: require('dtrace-provider' + '')
-- ../node_modules/bunyan/lib/bunyan.js [100:13]: require('mv' + '')
-- ../node_modules/bunyan/lib/bunyan.js [106:27]: require('source-map-support' + '')
-...
+.package/one:
+  # ...
+  misses:
+    resolved: []
+    missed:
+      /PATH/TO/PROJECT/node_modules/bunyan/lib/bunyan.js:
+        - "[79:17]: require('dtrace-provider' + '')"
+        - "[100:13]: require('mv' + '')"
+        - "[106:27]: require('source-map-support' + '')"
 ```
 
 which gives you the line + column number of the dynamic dependency in a given source file and snippet of the code in question.
 
-In addition to just logging this information, you can ensure you have no unaccounted for dynamic import misses by setting `jetpack.trace.dynamic.bail = true` in your applicable service or function-level configuration.
+In addition to just logging this information, you can ensure you have no unaccounted for dynamic import misses by setting `dynamic.bail = true` in `options` or `packages.<PKG_NAME>`-level configuration.
 
 **Diagnose**
 
-With the `--report` output in hand, the recommended course is to identify what the impact is of these missed dynamic imports. For example, in `node_modules/bunyan/lib/bunyan.js` the interesting `require('mv' + '')` import is within a permissive try/catch block to allow conditional import of the library if found (and prevent `browserify` from bundling the library). For our Serverless application we could choose to ignore these dynamic imports or manually add in the imported libraries.
+With the `--report` output in hand, the recommended course is to identify what the impact is of these missed dynamic imports. For example, in `node_modules/bunyan/lib/bunyan.js` the interesting `require('mv' + '')` import is within a permissive try/catch block to allow conditional import of the library if found (and prevent `browserify` from bundling the library). For our application we could choose to ignore these dynamic imports or manually add in the imported libraries.
 
-For other dependencies, there may well be "hidden" dependencies that you will need to add to your Serverless bundle for runtime correctness. Things like `node-config` which dynamically imports various configuration files from environment variable information, etc.
+For other dependencies, there may well be "hidden" dependencies that you will need to add to your zip bundle for runtime correctness. Things like `node-config` which dynamically imports various configuration files from environment variable information, etc.
 
 **Remedy**
 
-Once we have logging information and the `--report` output, we can start remedying dynamic import misses via the Jetpack feature `jetpack.trace.dynamic.resolutions`. Resolutions are keys to files with dynamic import misses that allow a developer to specify what imports _should_ be included manually or to simply ignore the dynamic import misses.
+Once we have logging information and the `--report` output, we can start remedying dynamic import misses via the `dynamic.resolutions` configuration option. Resolutions are keys to files with dynamic import misses that allow a developer to specify what imports _should_ be included manually or to simply ignore the dynamic import misses.
 
 **Keys**: Resolutions take a key value to match each file with missing dynamic imports. There are two types of keys that are used:
 
-* **Application Source File**: Something that is within your application and **not** `node_modules`. Specify these files with a dot prefix as appropriate relative to the Serverless service path (usually CWD) like `./src/server.js` or `../outside/file.js`.
+* **Application Source File**: Something that is within your application and **not** `node_modules`. Specify these files with a dot prefix as appropriate relative to your package current working directory (`cwd`) like `./src/server.js` or `../outside/file.js`.
 * **Package Dependencies**: A file from a dependency within `node_modules`. Specify these files without a dot and just `PKG_NAME/path/to/file.js` or `@SCOPE/PKG_NAME/path/to/file.js`.
 
 **Values**: Values are an array of extra imports to add in from each file as if they were declared in that very file with `require("EXTRA_IMPORT")` or `import "EXTRA_IMPORT"`. This means the values should either be _relative paths within that package_ (`./lib/auth/noop.js`) or other package dependencies (`lodash` or `lodash/map.js`).
-    * **Note**: We choose to support "additional imports" and not just file additions like `package.include` or `jetpack.trace.include`. The reason is that for package dependency import misses, the packages can be flattened to unpredictable locations in the `node_modules` trees and doubly so in monorepos. An import will always be resolved to the correct location, and that's why we choose it. At the same time, tools like `package.include` or `jetpack.trace.include`are still available to use!
+    * **Note**: We choose to support "additional imports" and not just file glob additions like `packages.<PKG_NAME>.include`. The reason is that for package dependency import misses, the packages can be flattened to unpredictable locations in the `node_modules` trees and doubly so in monorepos. An import will always be resolved to the correct location, and that's why we choose it.
 
 Some examples:
 
 [`bunyan`](https://github.com/trentm/node-bunyan): The popular logger library has some optional dependencies that are not meant only for Node.js. To prevent browser bundling tools from including, they use a curious `require` strategy of `require('PKG_NAME' + '')` to defeat parsing. For Jetpack, this means we get dynamic misses reports of:
 
 ```yml
-- node_modules/bunyan/lib/bunyan.js [79:17]: require('dtrace-provider' + '')
-- node_modules/bunyan/lib/bunyan.js [100:13]: require('mv' + '')
-- node_modules/bunyan/lib/bunyan.js [106:27]: require('source-map-support' + '')
+/PATH/TO/PROJECT/node_modules/bunyan/lib/bunyan.js:
+  - "[79:17]: require('dtrace-provider' + '')"
+  - "[100:13]: require('mv' + '')"
+  - "[106:27]: require('source-map-support' + '')"
 ```
 
 Using `resolutions` we can remedy these by simple adding imports for all three libraries like:
 
 ```yml
-custom:
-  jetpack:
-    trace:
-      dynamic:
-        resolutions:
-          "bunyan/lib/bunyan.js":
-            - "dtrace-provider"
-            - "mv"
-            - "source-map-support"
+dynamic:
+  resolutions:
+    "bunyan/lib/bunyan.js":
+      - "dtrace-provider"
+      - "mv"
+      - "source-map-support"
 ```
 
 [`express`](https://expressjs.com/): The popular server framework dynamically imports engines which produces a dynamic misses report of:
 
 ```yml
-- node_modules/express/lib/view.js [81:13]: require(mod)
+/PATH/TO/PROJECT/mode_modules/express/lib/view.js
+  - "[81:13]: require(mod)"
 ```
 
 In a common case, this is a non-issue if you aren't using engines, so we can simply "ignore" the import miss by setting an empty array `resolutions` value:
 
 ```yml
-custom:
-  jetpack:
-    trace:
-      dynamic:
-        resolutions:
-          "express/lib/view.js": []
+dynamic:
+  resolutions:
+    "express/lib/view.js": []
 ```
 
-Once we have analyzed all of our misses and added `resolutions` to either ignore the miss or add other imports, we can then set `trace.dynamic.bail = true` to make sure that if future dependency upgrades adds new, unhandled dynamic misses we will get a failed build notification so we know that we're always deploying known, good code.
-
--->
+Once we have analyzed all of our misses and added `resolutions` to either ignore the miss or add other imports, we can then set `dynamic.bail = true` to make sure that if future dependency upgrades adds new, unhandled dynamic misses we will get a failed build notification so we know that we're always deploying known, good code.
 
 ### Packaged files
 
