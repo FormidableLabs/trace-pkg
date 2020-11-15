@@ -274,11 +274,12 @@ Once we have logging information and the `--report` output, we can start remedyi
 
 **Keys**: Resolutions take a key value to match each file with missing dynamic imports. There are two types of keys that are used:
 
-* **Application Source File**: Something that is within your application and **not** `node_modules`. Specify these files with a dot prefix as appropriate relative to your package current working directory (`cwd`) like `./src/server.js` or `../outside/file.js`.
-* **Package Dependencies**: A file from a dependency within `node_modules`. Specify these files without a dot and just `PKG_NAME/path/to/file.js` or `@SCOPE/PKG_NAME/path/to/file.js`.
+- **Application Source File**: Something that is within your application and **not** `node_modules`. Specify these files with a dot prefix as appropriate relative to your package current working directory (`cwd`) like `./src/server.js` or `../outside/file.js`.
+- **Package Dependencies**: A file from a dependency within `node_modules`. Specify these files without a dot and just `PKG_NAME/path/to/file.js` or `@SCOPE/PKG_NAME/path/to/file.js`.
 
 **Values**: Values are an array of extra imports to add in from each file as if they were declared in that very file with `require("EXTRA_IMPORT")` or `import "EXTRA_IMPORT"`. This means the values should either be _relative paths within that package_ (`./lib/auth/noop.js`) or other package dependencies (`lodash` or `lodash/map.js`).
-    * **Note**: We choose to support "additional imports" and not just file glob additions like `packages.<PKG_NAME>.include`. The reason is that for package dependency import misses, the packages can be flattened to unpredictable locations in the `node_modules` trees and doubly so in monorepos. An import will always be resolved to the correct location, and that's why we choose it.
+
+- **Note**: We choose to support "additional imports" and not just file glob additions like `packages.<PKG_NAME>.include`. The reason is that for package dependency import misses, the packages can be flattened to unpredictable locations in the `node_modules` trees and doubly so in monorepos. An import will always be resolved to the correct location, and that's why we choose it.
 
 Some examples:
 
