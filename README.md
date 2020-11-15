@@ -5,11 +5,33 @@ trace-pkg 📦
 [![Actions Status][actions_img]][actions_site]
 [![Coverage Status][cov_img]][cov_site]
 
-A dependency tracing packager for Node.js source files.
+A blazingly fast Node.js zip application packager for AWS Lambda, etc.
+
+- 🔥 **Fast**: Efficient, concurrent packaging with full multi-cpu utilization.
+- 🔎 **Small**: Dependency tracing to include **only** the files your application uses.
+- ⚙️ **Flexible**: Highly tunable configuration/introspection for dynamic, optional import handling.
 
 ## Overview
 
 `trace-pkg` is a packager for Node.js applications. It ingests entry point files, then uses the [trace-deps][] library to infer all other source files imported at runtime, and then creates a zip bundle suitable for use with AWS Lambda, Serverless, etc.
+
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+
+- [Usage](#usage)
+- [Configuration](#configuration)
+  - [Configuration options](#configuration-options)
+    - [Global options](#global-options)
+    - [Per-package options](#per-package-options)
+  - [Configuration examples](#configuration-examples)
+- [Notes](#notes)
+  - [Handling dynamic import misses](#handling-dynamic-import-misses)
+  - [Packaged files](#packaged-files)
+  - [Related projects](#related-projects)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 
 ## Usage
 
@@ -36,22 +58,20 @@ Configuration options are generally global (`options.<OPTION_NAME>`) and/or per-
 #### Global options
 
 - `options.cwd` (`String`): Current working directory from which to read input files as well as output zip bundles (default: `process.cwd()`).
-- `options.concurrency` (`Number`): The number of independent package tasks (per function and service) to run off the main execution thread. If `1`, then run tasks serially in main thread. If `2+` run off main thread with `concurrency` number of workers. If `0`, then use "number of CPUs" value. (default: `1`).
+- `options.concurrency` (`Number`): The number of independent package tasks to run off the main execution thread. If `1`, then run tasks serially in main thread. If `2+` run off main thread with `concurrency` number of workers. If `0`, then use "number of CPUs" value. (default: `1`).
     - Can be overridden from CLI with `--concurrency <NUMBER>`
 - `options.ignores` (`Array<string>`): A set of package path prefixes up to a directory level (e.g., `react` or `mod/lib`) to skip tracing on. This is particularly useful when you are excluding a package like `aws-sdk` that is already provided for your lambda.
 - `options.allowMissing` (`Object.<string, Array<string>>`): A way to allow certain packages to have potentially failing dependencies. Specify each object key as a package name and value as an array of dependencies that _might_ be missing on disk. If the sub-dependency is found, then it is included in the bundle (this part distinguishes this option from `ignores`). If not, it is skipped without error.
 - `options.dynamic.resolutions` (`Object.<string, Array<string>>`): Handle dynamic import misses by providing a key to match misses on and an array of additional glob patterns to trace and include in the application bundle.
     - _Application source files_: If a miss is an application source file (e.g., not within `node_modules`), specify the **relative path** (from the package-level `cwd`) to it like `"./src/server/router.js": [/* array of patterns */]`.
-        * **Note**: To be an application source path, it **must** be prefixed with a dot (e.g., `./src/server.js`, `../lower/src/server.js`). Basically, like the Node.js `require()` rules go for a local path file vs. a package dependency.
-        * **Warning**: When resolving relative paths, the **package-level** `cwd` value applies. If you have different `cwd` configurations per-packaged/globally, then (dot-prefixed) resolution keys should only be specified in `packages.<PKG_NAME>.dynamic.resolutions` and **not** `options.dynamic.resolutions`.
+        - **Note**: To be an application source path, it **must** be prefixed with a dot (e.g., `./src/server.js`, `../lower/src/server.js`). Basically, like the Node.js `require()` rules go for a local path file vs. a package dependency.
+        - **Warning**: When resolving relative paths, the **package-level** `cwd` value applies. If you have different `cwd` configurations per-packaged/globally, then (dot-prefixed) resolution keys should only be specified in `packages.<PKG_NAME>.dynamic.resolutions` and **not** `options.dynamic.resolutions`.
     * _Dependency packages_: If a miss is part of a dependency (e.g., an `npm` package placed within `node_modules`), specify the **package name** first (without including `node_modules`) and then trailing path to file at issue like `"bunyan/lib/bunyan.js": [/* array of patterns */]`.
     * _Ignoring dynamic import misses_: If you just want to ignore the missed dynamic imports for a given application source file or package, just specify and empty array `[]` or falsy value.
-- `options.dynamic.bail` (`Boolean`):
-  `// TODO: IMPLEMENT options.dynamic.bail`
-  `// TODO: --dry-run just reports`
+- `options.dynamic.bail` (`Boolean`): Exit CLI with error if dynamic import misses are detected. (default: `false`). See [discussion below](#handling-dynamic-import-misses) regarding handling.
 - `options.collapsed.bail` (`Boolean`):
-  `// TODO: IMPLEMENT options.collapsed.bail`
-  `// TODO: --dry-run just reports`
+    - `// TODO: IMPLEMENT options.collapsed.bail`
+    - `// TODO: write up handling collapsed conflicts section like jetpack has with link here and in log message`
 
 #### Per-package options
 
@@ -62,6 +82,7 @@ Configuration options are generally global (`options.<OPTION_NAME>`) and/or per-
 - `packages.<PKG_NAME>.ignores` (`Array<string>`): Additional configuration to merge with `options.ignores`.
 - `packages.<PKG_NAME>.allowMissing` (`Object.<string, Array<string>>`): Additional configuration to merge with `options.allowMissing`.
 - `packages.<PKG_NAME>.dynamic.resolutions` (`Object.<string, Array<string>>`): Additional configuration to merge with `options.dynamic.resolutions`.
+- `packages.<PKG_NAME>.dynamic.bail` (`Boolean`): Override `options.dynamic.bail` value.
 
 ### Configuration examples
 
@@ -82,6 +103,38 @@ options:
   #
   # Directory from which to read input files as well as output zip bundles.
   cwd: /ABSOLUTE/PATH (or) ./a/relative/path/to/process.cwd
+
+  # Package path prefixes up to a directory level to skip tracing on.
+  ignores:
+    - PKG_NAME (or) PKG_NAME/SUB_DIR/
+
+  # Package keys with sub-dependencies to allow to be missing.
+  allowMissing:
+    PKG_NAME:
+      - SUB_PKG_NAME_ONE
+      - SUB_PKG_NAME_TWO
+
+  dynamic:
+    # Error if any dynamic misses are unresolved (default: `false`)
+    bail: true (or) false
+
+    # Resolve encountered dynamic import misses, either by tracing
+    # additional files, or ignoring after confirmation of safety.
+    resolutions:
+      # **Application Source**
+      #
+      # Specify keys as relative path to application source files starting
+      # with a dot.
+      "./RELATIVE/PATH/TO/FILE.js":
+        - "../SOME/OTHER/RELATIVE/FILE.js"
+        - "PKG_NAME" (or) "PGK_NAME/WITH/PATH.js"
+
+      # **Dependencies**
+      #
+      # Specify keys as `PKG_NAME/path/to/file.js`.
+      "PGK_NAME/WITH/PATH.js":
+        - "../SOME/OTHER/RELATIVE/FILE.js"
+        - "PKG_NAME" (or) "PGK_NAME/WITH/PATH.js"
 
 # Each "package" corresponds to an outputted zip file. It can contain an number
 # of traced or straight included files.
@@ -114,34 +167,12 @@ packages:
       - <FILE_OR_PATTERN_ONE>.js
       - <FILE_TWO>.js
 
-    # Package path prefixes up to a directory level to skip tracing on.
-    ignores:
-      - PKG_NAME (or) PKG_NAME/SUB_DIR/
-
-    # Package keys with sub-dependencies to allow to be missing.
-    allowMissing:
-      PKG_NAME:
-        - SUB_PKG_NAME_ONE
-        - SUB_PKG_NAME_TWO
-
+    # Extensions of `options.*` fields below...
+    ignores: []
+    allowMissing: {}
     dynamic:
-      # Resolve encountered dynamic import misses, either by tracing
-      # additional files, or ignoring after confirmation of safety.
-      resolutions:
-        # **Application Source**
-        #
-        # Specify keys as relative path to application source files starting
-        # with a dot.
-        "./RELATIVE/PATH/TO/FILE.js":
-          - "../SOME/OTHER/RELATIVE/FILE.js"
-          - "PKG_NAME" (or) "PGK_NAME/WITH/PATH.js"
-
-        # **Dependencies**
-        #
-        # Specify keys as `PKG_NAME/path/to/file.js`.
-        "PGK_NAME/WITH/PATH.js":
-          - "../SOME/OTHER/RELATIVE/FILE.js"
-          - "PKG_NAME" (or) "PGK_NAME/WITH/PATH.js"
+      bail: true
+      resolutions: {}
 
   # EXAMPLES
   # ========
@@ -162,57 +193,157 @@ packages:
         - "utf-8-validate"
 
     dynamic:
-        resolutions:
-          # **Application Source**
-          "./src/server/config.js":
-            # Manually trace all configuration files for bespoke configuration
-            # application code. (Note these are relative to the file key!)
-            - "../../config/default.js"
-            - "../../config/production.js"
+      bail: true              # Error on unresolved dynamic misses.
 
-          # Ignore dynamic import misses with empty array.
-          "./src/something-else.js": []
+      resolutions:
+        # **Application Source**
+        "./src/server/config.js":
+          # Manually trace all configuration files for bespoke configuration
+          # application code. (Note these are relative to the file key!)
+          - "../../config/default.js"
+          - "../../config/production.js"
 
-          # **Dependencies**
-          "bunyan/lib/bunyan.js":
-            # - node_modules/bunyan/lib/bunyan.js [79:17]: require('dtrace-provider' + '')
-            # - node_modules/bunyan/lib/bunyan.js [100:13]: require('mv' + '')
-            # - node_modules/bunyan/lib/bunyan.js [106:27]: require('source-map-support' + '')
-            #
-            # These are all just try/catch-ed permissive require's meant to be
-            # excluded in browser. We manually add them in here.
-            - "dtrace-provider"
-            - "mv"
-            - "source-map-support"
+        # Ignore dynamic import misses with empty array.
+        "./src/something-else.js": []
 
-          # Ignore: we aren't using themes.
-          # - node_modules/colors/lib/colors.js [127:29]: require(theme)
-          "colors/lib/colors.js": []
+        # **Dependencies**
+        "bunyan/lib/bunyan.js":
+          # - node_modules/bunyan/lib/bunyan.js [79:17]: require('dtrace-provider' + '')
+          # - node_modules/bunyan/lib/bunyan.js [100:13]: require('mv' + '')
+          # - node_modules/bunyan/lib/bunyan.js [106:27]: require('source-map-support' + '')
+          #
+          # These are all just try/catch-ed permissive require's meant to be
+          # excluded in browser. We manually add them in here.
+          - "dtrace-provider"
+          - "mv"
+          - "source-map-support"
+
+        # Ignore: we aren't using themes.
+        # - node_modules/colors/lib/colors.js [127:29]: require(theme)
+        "colors/lib/colors.js": []
 ```
 
 ## Notes
 
+### Handling dynamic import misses
+
+Dynamic imports that use variables or runtime execution like `require(A_VARIABLE)` or ``import(`template_${VARIABLE}`)`` cannot be used by `trace-pkg` to infer what the underlying dependency files are for inclusion in the bundle. That means some level of developer research and configuration to handle.
+
+**Identify**
+
+The first step is to be aware and watch for dynamic import misses. Conveniently, `trace-pkg` logs warnings like the following:
+
+```
+WARN Dynamic misses in .package/one:
+- /PATH/TO/PROJECT/node_modules/bunyan/lib/bunyan.js
+  [79:17]: require('dtrace-provider' + '')
+  [100:13]: require('mv' + '')
+  [106:27]: require('source-map-support' + '')
+WARN To resolve dynamic import misses, see logs & read: https://npm.im/trace-pkg#handling-dynamic-import-misses
+```
+
+and produces combined `--report` output like:
+
+```yaml
+## Output
+
+.package/one:
+  # ...
+  misses:
+    resolved: []
+    missed:
+      /PATH/TO/PROJECT/node_modules/bunyan/lib/bunyan.js:
+        - "[79:17]: require('dtrace-provider' + '')"
+        - "[100:13]: require('mv' + '')"
+        - "[106:27]: require('source-map-support' + '')"
+```
+
+which gives you the line + column number of the dynamic dependency in a given source file and snippet of the code in question.
+
+In addition to just logging this information, you can ensure you have no unaccounted for dynamic import misses by setting `dynamic.bail = true` in `options` or `packages.<PKG_NAME>`-level configuration.
+
+**Diagnose**
+
+With the `--report` output in hand, the recommended course is to identify what the impact is of these missed dynamic imports. For example, in `node_modules/bunyan/lib/bunyan.js` the interesting `require('mv' + '')` import is within a permissive try/catch block to allow conditional import of the library if found (and prevent `browserify` from bundling the library). For our application we could choose to ignore these dynamic imports or manually add in the imported libraries.
+
+For other dependencies, there may well be "hidden" dependencies that you will need to add to your zip bundle for runtime correctness. Things like `node-config` which dynamically imports various configuration files from environment variable information, etc.
+
+**Remedy**
+
+Once we have logging information and the `--report` output, we can start remedying dynamic import misses via the `dynamic.resolutions` configuration option. Resolutions are keys to files with dynamic import misses that allow a developer to specify what imports _should_ be included manually or to simply ignore the dynamic import misses.
+
+**Keys**: Resolutions take a key value to match each file with missing dynamic imports. There are two types of keys that are used:
+
+- **Application Source File**: Something that is within your application and **not** `node_modules`. Specify these files with a dot prefix as appropriate relative to your package current working directory (`cwd`) like `./src/server.js` or `../outside/file.js`.
+- **Package Dependencies**: A file from a dependency within `node_modules`. Specify these files without a dot and just `PKG_NAME/path/to/file.js` or `@SCOPE/PKG_NAME/path/to/file.js`.
+
+**Values**: Values are an array of extra imports to add in from each file as if they were declared in that very file with `require("EXTRA_IMPORT")` or `import "EXTRA_IMPORT"`. This means the values should either be _relative paths within that package_ (`./lib/auth/noop.js`) or other package dependencies (`lodash` or `lodash/map.js`).
+
+- **Note**: We choose to support "additional imports" and not just file glob additions like `packages.<PKG_NAME>.include`. The reason is that for package dependency import misses, the packages can be flattened to unpredictable locations in the `node_modules` trees and doubly so in monorepos. An import will always be resolved to the correct location, and that's why we choose it.
+
+Some examples:
+
+[`bunyan`](https://github.com/trentm/node-bunyan): The popular logger library has some optional dependencies that are not meant only for Node.js. To prevent browser bundling tools from including, they use a curious `require` strategy of `require('PKG_NAME' + '')` to defeat parsing. For Jetpack, this means we get dynamic misses reports of:
+
+```yml
+/PATH/TO/PROJECT/node_modules/bunyan/lib/bunyan.js:
+  - "[79:17]: require('dtrace-provider' + '')"
+  - "[100:13]: require('mv' + '')"
+  - "[106:27]: require('source-map-support' + '')"
+```
+
+Using `resolutions` we can remedy these by simple adding imports for all three libraries like:
+
+```yml
+dynamic:
+  resolutions:
+    "bunyan/lib/bunyan.js":
+      - "dtrace-provider"
+      - "mv"
+      - "source-map-support"
+```
+
+[`express`](https://expressjs.com/): The popular server framework dynamically imports engines which produces a dynamic misses report of:
+
+```yml
+/PATH/TO/PROJECT/mode_modules/express/lib/view.js
+  - "[81:13]: require(mod)"
+```
+
+In a common case, this is a non-issue if you aren't using engines, so we can simply "ignore" the import miss by setting an empty array `resolutions` value:
+
+```yml
+dynamic:
+  resolutions:
+    "express/lib/view.js": []
+```
+
+Once we have analyzed all of our misses and added `resolutions` to either ignore the miss or add other imports, we can then set `dynamic.bail = true` to make sure that if future dependency upgrades adds new, unhandled dynamic misses we will get a failed build notification so we know that we're always deploying known, good code.
+
 ### Packaged files
 
-Like the [Serverless framework][], `trace-pkg` attempts to create deteriministic zip files wherein the same source files should produce a byte-wise identical zip file. We do this via two primary means:
+Like the [Serverless framework][], `trace-pkg` attempts to create deterministic zip files wherein the same source files should produce a byte-wise identical zip file. We do this via two primary means:
 
 - Source files are sorted in order of insertion into the zip archive.
 - Source files have `mtime` file metadata set to the UNIX epoch.
 
-### Comparison to serverless-jetpack
+### Related projects
 
-For those familiar with the [Serverless framework][], this project provides the packaging speed of the [serverless-jetpack][] plugin as both use the same [underlying tracing library][trace-deps], just without the actual Serverless Framework.
+**[serverless-jetpack][]**
 
-- [ ] TODO: Document differences in configuration.
+For those familiar with the [Serverless framework][], this project provides the packaging speed of the [serverless-jetpack][] plugin as both use the same [underlying tracing library][trace-deps], just without the actual Serverless Framework. This project was created from the successes of `serverless-jetpack`'s [tracing mode][] when our use cases needed standalone packages for Terraform-based AWS Lambda deployments that didn't use the `serverless` framework. Much of our documentation is incorporated and refactored slightly for the minor differences in `trace-pkg`.
+
+If you are using the `serverless` framework, definitely give `serverless-jetpack` a whirl!
 
 [npm_img]: https://badge.fury.io/js/trace-pkg.svg
 [npm_site]: http://badge.fury.io/js/trace-pkg
 [actions_img]: https://github.com/FormidableLabs/trace-pkg/workflows/CI/badge.svg
 [actions_site]: https://github.com/FormidableLabs/trace-pkg/actions
-[cov_img]: https://codecov.io/gh/FormidableLabs/trace-pkg/branch/master/graph/badge.svg
+[cov_img]: https://codecov.io/gh/FormidableLabs/trace-pkg/branch/main/graph/badge.svg
 [cov_site]: https://codecov.io/gh/FormidableLabs/trace-pkg
 
 [trace-deps]: https://github.com/FormidableLabs/trace-deps
 [Serverless framework]: https://www.serverless.com/
 [serverless-jetpack]: https://github.com/FormidableLabs/serverless-jetpack
+[tracing mode]: https://github.com/FormidableLabs/serverless-jetpack#tracing-mode
 [fast-glob]: https://github.com/mrmlnc/fast-glob

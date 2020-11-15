@@ -1,6 +1,11 @@
 Changes
 =======
 
+## UNRELEASED
+
+* Feature: Add `dynamic.bail` configuration option.
+  [#4](https://github.com/FormidableLabs/trace-pkg/issues/4)
+
 ## 0.2.0
 
 * Feature: Add `misses` report to `--report` and log output.
