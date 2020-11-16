@@ -835,7 +835,7 @@ describe("lib/actions/package", () => {
   it("warns on collapsed files in zip bundle"); // TODO: IMPLEMENT
 
   // TODO: HERE
-  it.skip("errors on collapsed files in zip bundle with bail", async () => {
+  it.only("errors on collapsed files in zip bundle with bail", async () => {
     const errStub = sandbox.stub(console, "error");
 
     mock({

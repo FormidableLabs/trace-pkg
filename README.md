@@ -27,6 +27,7 @@ A blazingly fast Node.js zip application packager for AWS Lambda, etc.
   - [Configuration examples](#configuration-examples)
 - [Notes](#notes)
   - [Handling dynamic import misses](#handling-dynamic-import-misses)
+  - [Handling collapsed files](#handling-collapsed-files)
   - [Packaged files](#packaged-files)
   - [Related projects](#related-projects)
 
@@ -113,6 +114,10 @@ options:
       - SUB_PKG_NAME_ONE
       - SUB_PKG_NAME_TWO
 
+  collapsed:
+    # Error if any collapsed files in zip are found (default: `false`)
+    bail: true (or) false
+
   dynamic:
     # Error if any dynamic misses are unresolved (default: `false`)
     bail: true (or) false
@@ -169,6 +174,8 @@ packages:
     # Extensions of `options.*` fields below...
     ignores: []
     allowMissing: {}
+    collapsed:
+      bail: true
     dynamic:
       bail: true
       resolutions: {}
@@ -190,6 +197,9 @@ packages:
       "ws":                   # Ignore optional, lazy imported dependencies in `ws` package.
         - "bufferutil"
         - "utf-8-validate"
+
+    collapsed:
+      bail: true              # Error on collapsed files in zip.
 
     dynamic:
       bail: true              # Error on unresolved dynamic misses.
@@ -319,7 +329,11 @@ dynamic:
 
 Once we have analyzed all of our misses and added `resolutions` to either ignore the miss or add other imports, we can then set `dynamic.bail = true` to make sure that if future dependency upgrades adds new, unhandled dynamic misses we will get a failed build notification so we know that we're always deploying known, good code.
 
-#### Packaging files Outside CWD
+### Handling collapsed files
+
+<!--
+
+`TODO: REFACTOR JETPACK SECTION INTO THIS README`
 
 ##### How files are zipped
 
@@ -414,10 +428,6 @@ With a better understanding of what the files are and why we can turn to avoidin
 -->
 
 ### Packaged files
-
-<!--
-
-`TODO: REFACTOR JETPACK SECTION INTO THIS README`
 
 Like the [Serverless framework][], `trace-pkg` attempts to create deterministic zip files wherein the same source files should produce a byte-wise identical zip file. We do this via two primary means:
 
