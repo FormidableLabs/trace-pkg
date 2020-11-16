@@ -832,8 +832,77 @@ describe("lib/actions/package", () => {
     ]);
   });
 
-  // https://github.com/FormidableLabs/trace-pkg/issues/3
-  it("errors on collapsed files in zip bundle"); // TODO(3)
+  it("warns on collapsed files in zip bundle"); // TODO: IMPLEMENT
+
+  // TODO: HERE
+  it.skip("errors on collapsed files in zip bundle with bail", async () => {
+    const errStub = sandbox.stub(console, "error");
+
+    mock({
+      packages: {
+        one: {
+          "index.js": `
+            // Root level dep import.
+            require("dep");
+
+            // Transitive nested dep import.
+            module.exports = require("./lib/nested");
+          `,
+          lib: {
+            "nested.js": `
+              module.exports = require("dep");
+            `
+          },
+          node_modules: {
+            dep: {
+              "package.json": JSON.stringify({
+                main: "index.js",
+                version: "2.0.0"
+              }),
+              "index.js": `
+                module.exports = "dep";
+              `
+            }
+          }
+        }
+      },
+      node_modules: {
+        dep: {
+          "package.json": JSON.stringify({
+            main: "index.js",
+            version: "1.0.0"
+          }),
+          "index.js": `
+            module.exports = "dep";
+          `
+        }
+      }
+    });
+
+    await expect(createPackage({
+      opts: {
+        config: {
+          options: {
+            collapsed: {
+              bail: true
+            }
+          },
+          packages: {
+            one: {
+              cwd: "packages/one/",
+              trace: [
+                "index.js"
+              ]
+            }
+          }
+        }
+      }
+    })).to.eventually.be.rejectedWith("Found collapsed files");
+
+    expect(errStub).to.be.calledWithMatch("ERROR", "Found collapsed files in one.zip: [");
+  });
+
+  it("has no collapsed files in zip bundle from root"); // TODO: SAME AS ABOVE BUT ROOT
 
   // https://github.com/FormidableLabs/trace-pkg/issues/11
   it("packages projects with symlinks"); // TODO(11)
