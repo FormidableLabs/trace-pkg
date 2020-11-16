@@ -69,9 +69,7 @@ Configuration options are generally global (`options.<OPTION_NAME>`) and/or per-
     * _Dependency packages_: If a miss is part of a dependency (e.g., an `npm` package placed within `node_modules`), specify the **package name** first (without including `node_modules`) and then trailing path to file at issue like `"bunyan/lib/bunyan.js": [/* array of patterns */]`.
     * _Ignoring dynamic import misses_: If you just want to ignore the missed dynamic imports for a given application source file or package, just specify and empty array `[]` or falsy value.
 - `options.dynamic.bail` (`Boolean`): Exit CLI with error if dynamic import misses are detected. (default: `false`). See [discussion below](#handling-dynamic-import-misses) regarding handling.
-- `options.collapsed.bail` (`Boolean`):
-    - `// TODO: IMPLEMENT options.collapsed.bail`
-    - `// TODO: write up handling collapsed conflicts section like jetpack has with link here and in log message`
+- `options.collapsed.bail` (`Boolean`): Exit CLI with error if collapsed file conflicts are detected. See [discussion below](#packaging-files-outside-cwd) regarding collapsed files.
 
 #### Per-package options
 
@@ -83,6 +81,7 @@ Configuration options are generally global (`options.<OPTION_NAME>`) and/or per-
 - `packages.<PKG_NAME>.allowMissing` (`Object.<string, Array<string>>`): Additional configuration to merge with `options.allowMissing`.
 - `packages.<PKG_NAME>.dynamic.resolutions` (`Object.<string, Array<string>>`): Additional configuration to merge with `options.dynamic.resolutions`.
 - `packages.<PKG_NAME>.dynamic.bail` (`Boolean`): Override `options.dynamic.bail` value.
+- `packages.<PKG_NAME>.collapsed.bail` (`Boolean`): Override `options.collapsed.bail` value.
 
 ### Configuration examples
 
@@ -306,7 +305,7 @@ dynamic:
 [`express`](https://expressjs.com/): The popular server framework dynamically imports engines which produces a dynamic misses report of:
 
 ```yml
-/PATH/TO/PROJECT/mode_modules/express/lib/view.js
+/PATH/TO/PROJECT/mode_modules/express/lib/view.js:
   - "[81:13]: require(mod)"
 ```
 
@@ -320,7 +319,105 @@ dynamic:
 
 Once we have analyzed all of our misses and added `resolutions` to either ignore the miss or add other imports, we can then set `dynamic.bail = true` to make sure that if future dependency upgrades adds new, unhandled dynamic misses we will get a failed build notification so we know that we're always deploying known, good code.
 
+#### Packaging files Outside CWD
+
+##### How files are zipped
+
+A potentially serious situation that comes up with adding files to a Serverless package zip file is if any included files are outside of Serverless' `servicePath` / current working directory. For example, if you have files like:
+
+```yml
+- src/foo/bar.js
+- ../node_modules/lodash/index.js
+```
+
+Any file below CWD is collapsed into starting at CWD and not outside. So, for the above example, we package / later expand:
+
+```yml
+- src/foo/bar.js                # The same.
+- node_modules/lodash/index.js  # Removed `../`!!!
+```
+
+This most often happens with `node_modules` in monorepos where `node_modules` roots are scattered across different directories and nested. In particular, if you are using the `custom.jetpack.base` option this is likely going to come into play. Fortunately, in most cases, it's not that big of a deal. For example:
+
+```yml
+- node_modules/chalk/index.js
+- ../node_modules/lodash/index.js
+```
+
+will collapse when zipped to:
+
+```yml
+- node_modules/chalk/index.js
+- node_modules/lodash/index.js
+```
+
+... but Node.js [resolution rules](https://nodejs.org/api/modules.html#modules_all_together) should resolve and load the collapsed package the same as if it were in the original location.
+
+##### Zipping problems
+
+The real problems occur if there is a path conflict where files collapse to the **same location**. For example, if we have:
+
+```yml
+- node_modules/lodash/index.js
+- ../node_modules/lodash/index.js
+```
+
+this will append files with the same path in the zip file:
+
+```yml
+- node_modules/lodash/index.js
+- node_modules/lodash/index.js
+```
+
+that when expanded leave only **one** file actually on disk!
+
+##### How to detect zipping problems
+
+The first level is _detecting_ potentially collapsed files that conflict. Jetpack does this automatically with log warnings like:
+
+```
+Serverless: [serverless-jetpack] WARNING: Found 1 collapsed dependencies in .serverless/my-function.zip! Please fix, with hints at: https://npm.im/serverless-jetpack#packaging-files-outside-cwd
+Serverless: [serverless-jetpack] .serverless/FN_NAME.zip collapsed dependencies:
+- lodash (Packages: 2, Files: 108 unique, 216 total): [node_modules/lodash@4.17.11, ../node_modules/lodash@4.17.15]`
+```
+
+In the above example, `2` different versions of lodash were installed and their files were collapsed into the same path space. A total of `216` files will end up collapsed into `108` when expanded on disk in your cloud function. Yikes!
+
+A good practice if you are using tracing mode is to set: `jetpack.collapsed.bail = true` so that Jetpack will throw an error and kill the `serverless` program if any collapsed conflicts are detected.
+
+##### How to solve zipping problems
+
+So how do we fix the problem?
+
+A first starting point is to generate a full report of the packaging step. Instead of running `serverless deploy|package <OPTIONS>`, try out `serverless jetpack package --report <OPTIONS>`. This will produce a report at the end of packaging that gives a full list of files. You can then use the logged message above as a starting point to examine the actual files collapsed in the zip file. Then, spend a little time figuring out the dependencies of how things ended up where.
+
+With a better understanding of what the files are and why we can turn to avoiding collapses. Some options:
+
+* `TODO: INSERT "PACKAGE FROM ROOT OF REPOSITORY" BIG FIRST POINT`
+
+* **Don't allow `node_modules` in intermediate directories**: Typically, a monorepo has `ROOT/package.json` and `packages/NAME/package.json` or something, which doesn't typically lead to collapsed files. A situation that runs into trouble is something like:
+
+    ```
+    ROOT/package.json
+    ROOT/backend/package.json
+    ROOT/backend/functions/NAME/package.json
+    ```
+
+    with `serverless` being run from `backend` as CWD then `ROOT/node_modules` and `ROOT/backend/node_modules` will present potential collapsing conflicts. So, if possible, just remove the `backend/package.json` dependencies and stick them all either in the root or further nested into the functions/packages of the monorepo.
+
+* **Mirror exact same dependencies in `package.json`s**: In our above example, even if `lodash` isn't declared in either `../package.json` or `package.json` we can manually add it to both at the same pinned version (e.g., `"lodash": "4.17.15"`) to force it to be the same no matter where npm or Yarn place the dependency on disk.
+
+* **Use Yarn Resolutions**: If you are using Yarn and [resolutions](https://classic.yarnpkg.com/en/docs/selective-version-resolutions/) are an option that works for your project, they are a straightforward way to ensure that only one of a dependency exists on disk, solving collapsing problems.
+
+* **Use `package.include|exclude`**: You can manually adjust packaging by excluding files that would be collapsed and then allowing the other ones to come into play. In our example above, a negative `package.include` for `!node_modules/lodash/**` would solve our problem in a semver-acceptable way by leaving only root-level lodash.
+
+-->
+
 ### Packaged files
+
+<!--
+
+`TODO: REFACTOR JETPACK SECTION INTO THIS README`
 
 Like the [Serverless framework][], `trace-pkg` attempts to create deterministic zip files wherein the same source files should produce a byte-wise identical zip file. We do this via two primary means:
 
