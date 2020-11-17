@@ -835,15 +835,16 @@ describe("lib/actions/package", () => {
   it("warns on collapsed files in zip bundle"); // TODO: IMPLEMENT
 
   // TODO: HERE
-  it.only("errors on collapsed files in zip bundle with bail", async () => {
-    const errStub = sandbox.stub(console, "error");
+  it.skip("errors on collapsed files in zip bundle with bail", async () => {
+    // TODO REENABLE const errStub = sandbox.stub(console, "error");
+    logStub.restore(); // TODO REMOVE
 
     mock({
       packages: {
         one: {
           "index.js": `
             // Root level dep import.
-            require("dep");
+            require("root-dep");
 
             // Transitive nested dep import.
             module.exports = require("./lib/nested");
@@ -875,12 +876,23 @@ describe("lib/actions/package", () => {
           "index.js": `
             module.exports = "dep";
           `
+        },
+        "root-dep": {
+          "package.json": JSON.stringify({
+            main: "index.js",
+            version: "1.0.0"
+          }),
+          "index.js": `
+            // Forces root-level dep package.
+            module.exports = require("dep");
+          `
         }
       }
     });
 
     await expect(createPackage({
       opts: {
+        report: true, // TODO: REMOVE
         config: {
           options: {
             collapsed: {
@@ -889,7 +901,7 @@ describe("lib/actions/package", () => {
           },
           packages: {
             one: {
-              cwd: "packages/one/",
+              cwd: "packages/one",
               trace: [
                 "index.js"
               ]
@@ -897,9 +909,12 @@ describe("lib/actions/package", () => {
           }
         }
       }
-    })).to.eventually.be.rejectedWith("Found collapsed files");
+    })).to.eventually.be.rejectedWith("Collapsed file conflicts");
 
-    expect(errStub).to.be.calledWithMatch("ERROR", "Found collapsed files in one.zip: [");
+    // TODO: REENABLE AND MORE ASSERTS ON LOGS
+    // expect(errStub).to.be.calledWithMatch("ERROR", "Collapsed file conflicts in one: [");
+
+    // TODO: ASSERT ON REPORT OUTPUT TOO?
   });
 
   it("has no collapsed files in zip bundle from root"); // TODO: SAME AS ABOVE BUT ROOT

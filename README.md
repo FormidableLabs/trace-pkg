@@ -331,27 +331,23 @@ Once we have analyzed all of our misses and added `resolutions` to either ignore
 
 ### Handling collapsed files
 
-<!--
+**How files are zipped**
 
-`TODO: REFACTOR JETPACK SECTION INTO THIS README`
-
-##### How files are zipped
-
-A potentially serious situation that comes up with adding files to a Serverless package zip file is if any included files are outside of Serverless' `servicePath` / current working directory. For example, if you have files like:
+Add files above the current working directory (`cwd`) has the potential to lead to potential correctness issues and hard-to-find bugs. For example, if you have files like:
 
 ```yml
 - src/foo/bar.js
 - ../node_modules/lodash/index.js
 ```
 
-Any file below CWD is collapsed into starting at CWD and not outside. So, for the above example, we package / later expand:
+Any file below `cwd` is collapsed into starting **at** current working directory and not above it. So, for the above example, we package / later expand:
 
 ```yml
 - src/foo/bar.js                # The same.
 - node_modules/lodash/index.js  # Removed `../`!!!
 ```
 
-This most often happens with `node_modules` in monorepos where `node_modules` roots are scattered across different directories and nested. In particular, if you are using the `custom.jetpack.base` option this is likely going to come into play. Fortunately, in most cases, it's not that big of a deal. For example:
+This often can happen with `node_modules` in monorepos where `node_modules` roots are scattered across different directories and nested. Fortunately, in most cases, it's not that big of a deal. For example:
 
 ```yml
 - node_modules/chalk/index.js
@@ -367,7 +363,7 @@ will collapse when zipped to:
 
 ... but Node.js [resolution rules](https://nodejs.org/api/modules.html#modules_all_together) should resolve and load the collapsed package the same as if it were in the original location.
 
-##### Zipping problems
+**Zipping problems**
 
 The real problems occur if there is a path conflict where files collapse to the **same location**. For example, if we have:
 
@@ -383,49 +379,50 @@ this will append files with the same path in the zip file:
 - node_modules/lodash/index.js
 ```
 
-that when expanded leave only **one** file actually on disk!
+thus collapsing to only **one** file that is later expanded on disk.
 
-##### How to detect zipping problems
+**Detecting collapsed files**
 
-The first level is _detecting_ potentially collapsed files that conflict. Jetpack does this automatically with log warnings like:
+The first level is _detecting_ potentially collapsed files that conflict. `trace-pkg` does this automatically with log warnings like:
 
 ```
-Serverless: [serverless-jetpack] WARNING: Found 1 collapsed dependencies in .serverless/my-function.zip! Please fix, with hints at: https://npm.im/serverless-jetpack#packaging-files-outside-cwd
-Serverless: [serverless-jetpack] .serverless/FN_NAME.zip collapsed dependencies:
-- lodash (Packages: 2, Files: 108 unique, 216 total): [node_modules/lodash@4.17.11, ../node_modules/lodash@4.17.15]`
+TODO: INSERT_COLLAPSED_FILE_WARNING
 ```
 
-In the above example, `2` different versions of lodash were installed and their files were collapsed into the same path space. A total of `216` files will end up collapsed into `108` when expanded on disk in your cloud function. Yikes!
+TODO: INSERT_COMMENT_ABOUT_COLLAPSED_LOG_WARNING
 
-A good practice if you are using tracing mode is to set: `jetpack.collapsed.bail = true` so that Jetpack will throw an error and kill the `serverless` program if any collapsed conflicts are detected.
+To ensure you never accidentally miss collapsed files, set the `options` / `packages.<PKG_NAME>` field `collapsed.bail = true` so that `trace-pkg` will throw an error if any collapsed conflicts are detected.
 
-##### How to solve zipping problems
+**Solving collapsed file conflicts**
 
 So how do we fix the problem?
 
-A first starting point is to generate a full report of the packaging step. Instead of running `serverless deploy|package <OPTIONS>`, try out `serverless jetpack package --report <OPTIONS>`. This will produce a report at the end of packaging that gives a full list of files. You can then use the logged message above as a starting point to examine the actual files collapsed in the zip file. Then, spend a little time figuring out the dependencies of how things ended up where.
+The absolute first and foremost answer is to **set `cwd` and run `trace-pkg` from at the root of your project**.
 
-With a better understanding of what the files are and why we can turn to avoiding collapses. Some options:
+For example, if you have a monorepo like:
 
-* `TODO: INSERT "PACKAGE FROM ROOT OF REPOSITORY" BIG FIRST POINT`
+```
+node_modules/**
+packages/
+  one/
+    handler.js
+    node_modules/**
+  two/
+    handler.js
+    node_modules/**
+```
 
-* **Don't allow `node_modules` in intermediate directories**: Typically, a monorepo has `ROOT/package.json` and `packages/NAME/package.json` or something, which doesn't typically lead to collapsed files. A situation that runs into trouble is something like:
+Set up your configuration with the handlers from full paths (e.g., `packages/one|two/handler.js`) and package from the root of the project. By contrast, if you set `cwd` to `packages/one|two` and have Lambda handler configurations pointing to `index.js` within those `cwd`s, then you risk have collapsed files.
 
-    ```
-    ROOT/package.json
-    ROOT/backend/package.json
-    ROOT/backend/functions/NAME/package.json
-    ```
+If you absolutely _must_ set `cwd` in a manner where files may be included in the zip file above it, then here are some additional tips:
 
-    with `serverless` being run from `backend` as CWD then `ROOT/node_modules` and `ROOT/backend/node_modules` will present potential collapsing conflicts. So, if possible, just remove the `backend/package.json` dependencies and stick them all either in the root or further nested into the functions/packages of the monorepo.
+- **Start with a report**: Generate a full packaging report with the CLI `--report` option (for faster reports, also use `--dry-run` to skip zip file creation). Inspect the logs and the complete list of `collapsed` files per package in the output. Then, with an understanding of what is being collapsed consider some of the following heuristics / tweaks....
 
-* **Mirror exact same dependencies in `package.json`s**: In our above example, even if `lodash` isn't declared in either `../package.json` or `package.json` we can manually add it to both at the same pinned version (e.g., `"lodash": "4.17.15"`) to force it to be the same no matter where npm or Yarn place the dependency on disk.
+- **Mirror exact same dependencies in `package.json`s**: In our previous example with two `lodash`s, even if `lodash` isn't declared in either `../package.json` or `package.json` we can manually add it to both at the same pinned version (e.g., `"lodash": "4.17.15"`) to force it to be the same no matter where npm or Yarn place the dependency on disk.
 
-* **Use Yarn Resolutions**: If you are using Yarn and [resolutions](https://classic.yarnpkg.com/en/docs/selective-version-resolutions/) are an option that works for your project, they are a straightforward way to ensure that only one of a dependency exists on disk, solving collapsing problems.
+- **Use Yarn Resolutions**: If you are using Yarn and [resolutions](https://classic.yarnpkg.com/en/docs/selective-version-resolutions/) are an option that works for your project, they are a straightforward way to ensure that only one of a dependency exists on disk, solving collapsing problems.
 
-* **Use `package.include|exclude`**: You can manually adjust packaging by excluding files that would be collapsed and then allowing the other ones to come into play. In our example above, a negative `package.include` for `!node_modules/lodash/**` would solve our problem in a semver-acceptable way by leaving only root-level lodash.
-
--->
+... but ultimately the above hacks are fairly brittle and not general purpose fixes. Do yourself a favor, and just always run with `cwd` at the project root. 😉
 
 ### Packaged files
 

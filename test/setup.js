@@ -11,6 +11,7 @@ global.expect = expect;
 
 // Chalk
 // Disable chalk colors in tests.
+// TODO UNCOMMENT
 const chalk = require("chalk");
 chalk.level = 0;
 // Early require to get around mock-fs
