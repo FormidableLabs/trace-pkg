@@ -292,7 +292,7 @@ Once we have logging information and the `--report` output, we can start remedyi
 
 Some examples:
 
-[`bunyan`](https://github.com/trentm/node-bunyan): The popular logger library has some optional dependencies that are not meant only for Node.js. To prevent browser bundling tools from including, they use a curious `require` strategy of `require('PKG_NAME' + '')` to defeat parsing. For Jetpack, this means we get dynamic misses reports of:
+[`bunyan`](https://github.com/trentm/node-bunyan): The popular logger library has some optional dependencies that are not meant only for Node.js. To prevent browser bundling tools from including, they use a curious `require` strategy of `require('PKG_NAME' + '')` to defeat parsing. In `trace-pkg`, this means we get dynamic misses reports of:
 
 ```yml
 /PATH/TO/PROJECT/node_modules/bunyan/lib/bunyan.js:
