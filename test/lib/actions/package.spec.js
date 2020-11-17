@@ -835,19 +835,30 @@ describe("lib/actions/package", () => {
   it("warns on collapsed files in zip bundle"); // TODO: IMPLEMENT
 
   // TODO: HERE
-  it.skip("errors on collapsed files in zip bundle with bail", async () => {
+  const tempTest = process.env.TEMP_DEV ? it.only : it; // TODO: REMOVE
+  tempTest("errors on collapsed files in zip bundle with bail", async () => {
     // TODO REENABLE const errStub = sandbox.stub(console, "error");
     logStub.restore(); // TODO REMOVE
 
     mock({
+      "a-file.js": `
+        module.exports = "a file (at project root)";
+      `,
       packages: {
         one: {
           "index.js": `
             // Root level dep import.
             require("root-dep");
 
+            // Application sources conflicts.
+            require("../../a-file"); // Root
+            require("./a-file"); // In packages/one
+
             // Transitive nested dep import.
             module.exports = require("./lib/nested");
+          `,
+          "a-file.js": `
+            module.exports = "a file (in packages/one)";
           `,
           lib: {
             "nested.js": `

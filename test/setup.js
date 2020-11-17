@@ -11,8 +11,12 @@ global.expect = expect;
 
 // Chalk
 // Disable chalk colors in tests.
-// TODO UNCOMMENT
-const chalk = require("chalk");
-chalk.level = 0;
+// TODO REMOVE CONDITIONAL
+if (!process.env.TEMP_DEV) {
+  // eslint-disable-next-line global-require
+  const chalk = require("chalk");
+  chalk.level = 0;
+}
+
 // Early require to get around mock-fs
 require("chalk/source/templates");
