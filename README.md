@@ -70,7 +70,7 @@ Configuration options are generally global (`options.<OPTION_NAME>`) and/or per-
     * _Dependency packages_: If a miss is part of a dependency (e.g., an `npm` package placed within `node_modules`), specify the **package name** first (without including `node_modules`) and then trailing path to file at issue like `"bunyan/lib/bunyan.js": [/* array of patterns */]`.
     * _Ignoring dynamic import misses_: If you just want to ignore the missed dynamic imports for a given application source file or package, just specify and empty array `[]` or falsy value.
 - `options.dynamic.bail` (`Boolean`): Exit CLI with error if dynamic import misses are detected. (default: `false`). See [discussion below](#handling-dynamic-import-misses) regarding handling.
-- `options.collapsed.bail` (`Boolean`): Exit CLI with error if collapsed file conflicts are detected. See [discussion below](#packaging-files-outside-cwd) regarding collapsed files.
+- `options.collapsed.bail` (`Boolean`): Exit CLI with error if collapsed file conflicts are detected. (default: `true`). See [discussion below](#packaging-files-outside-cwd) regarding collapsed files.
 
 #### Per-package options
 
@@ -115,7 +115,7 @@ options:
       - SUB_PKG_NAME_TWO
 
   collapsed:
-    # Error if any collapsed files in zip are found (default: `false`)
+    # Error if any collapsed files in zip are found (default: `true`)
     bail: true (or) false
 
   dynamic:
@@ -386,12 +386,14 @@ thus collapsing to only **one** file that is later expanded on disk.
 The first level is _detecting_ potentially collapsed files that conflict. `trace-pkg` does this automatically with log warnings like:
 
 ```
-TODO: INSERT_COLLAPSED_FILE_WARNING
+WARN Collapsed sources in one (1 conflicts, 2 files): server.js
+WARN Collapsed dependencies in one (1 packages, 2 conflicts, 4 files): lodash
+WARN To address collapsed file conflicts, see logs & read: https://npm.im/trace-pkg#handling-collapsed-files
 ```
 
-TODO: INSERT_COMMENT_ABOUT_COLLAPSED_LOG_WARNING
+In the above example, collapsed "sources" are application files _outside_ of `node_modules` that were collapsed. Collapsed "dependencies" are files that are part of `node_modules` packages that we summarize for convenience at the package name level. Typically, projects encountering collapsed file conflicts do so with dependencies in a monorepo or other structure tha packages below the current working directory.
 
-To ensure you never accidentally miss collapsed files, set the `options` / `packages.<PKG_NAME>` field `collapsed.bail = true` so that `trace-pkg` will throw an error if any collapsed conflicts are detected.
+To ensure you never accidentally miss collapsed files, the `options` / `packages.<PKG_NAME>` field is set by default to `collapsed.bail = true` so that `trace-pkg` will throw an error if any collapsed conflicts are detected. Please consider keeping this enabled to save you from potentially bad production runtime errors!
 
 **Solving collapsed file conflicts**
 

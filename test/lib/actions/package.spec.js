@@ -832,13 +832,8 @@ describe("lib/actions/package", () => {
     ]);
   });
 
-  it("warns on collapsed files in zip bundle"); // TODO: IMPLEMENT
-
-  // TODO: HERE
-  const tempTest = process.env.TEMP_DEV ? it.only : it; // TODO: REMOVE
-  tempTest("errors on collapsed files in zip bundle with bail", async () => {
-    // TODO REENABLE const errStub = sandbox.stub(console, "error");
-    logStub.restore(); // TODO REMOVE
+  it("errors on collapsed files in zip bundle", async () => {
+    const errStub = sandbox.stub(console, "error");
 
     mock({
       "a-file.js": `
@@ -903,13 +898,7 @@ describe("lib/actions/package", () => {
 
     await expect(createPackage({
       opts: {
-        report: true, // TODO: REMOVE
         config: {
-          options: {
-            collapsed: {
-              bail: true
-            }
-          },
           packages: {
             one: {
               cwd: "packages/one",
@@ -922,13 +911,23 @@ describe("lib/actions/package", () => {
       }
     })).to.eventually.be.rejectedWith("Collapsed file conflicts");
 
-    // TODO: REENABLE AND MORE ASSERTS ON LOGS
-    // expect(errStub).to.be.calledWithMatch("ERROR", "Collapsed file conflicts in one: [");
-
-    // TODO: ASSERT ON REPORT OUTPUT TOO?
+    expect(logStub).to.be.calledWithMatch(
+      "WARN",
+      "Collapsed sources in one (1 conflicts, 2 files): a-file.js"
+    );
+    expect(logStub).to.be.calledWithMatch(
+      "WARN",
+      "Collapsed dependencies in one (1 packages, 2 conflicts, 4 files): dep"
+    );
+    expect(errStub).to.be.calledWithMatch(
+      "ERROR",
+      "Collapsed file conflicts in one: (3 total conflicts)"
+    );
   });
 
   it("has no collapsed files in zip bundle from root"); // TODO: SAME AS ABOVE BUT ROOT
+
+  it("warns on collapsed files in zip bundle with bail=false"); // TODO: IMPLEMENT
 
   // https://github.com/FormidableLabs/trace-pkg/issues/11
   it("packages projects with symlinks"); // TODO(11)
