@@ -832,8 +832,314 @@ describe("lib/actions/package", () => {
     ]);
   });
 
-  // https://github.com/FormidableLabs/trace-pkg/issues/3
-  it("errors on collapsed files in zip bundle"); // TODO(3)
+  it("errors on collapsed files in zip bundle", async () => {
+    const errStub = sandbox.stub(console, "error");
+
+    mock({
+      "a-file.js": `
+        module.exports = "a file (at project root)";
+      `,
+      packages: {
+        one: {
+          "index.js": `
+            // Root level dep import.
+            require("root-dep");
+
+            // Application sources conflicts.
+            require("../../a-file"); // Root
+            require("./a-file"); // In packages/one
+
+            // Transitive nested dep import.
+            module.exports = require("./lib/nested");
+          `,
+          "a-file.js": `
+            module.exports = "a file (in packages/one)";
+          `,
+          lib: {
+            "nested.js": `
+              module.exports = require("dep");
+            `
+          },
+          node_modules: {
+            dep: {
+              "package.json": JSON.stringify({
+                main: "index.js",
+                version: "2.0.0"
+              }),
+              "index.js": `
+                module.exports = "dep";
+              `
+            }
+          }
+        }
+      },
+      node_modules: {
+        dep: {
+          "package.json": JSON.stringify({
+            main: "index.js",
+            version: "1.0.0"
+          }),
+          "index.js": `
+            module.exports = "dep";
+          `
+        },
+        "root-dep": {
+          "package.json": JSON.stringify({
+            main: "index.js",
+            version: "1.0.0"
+          }),
+          "index.js": `
+            // Forces root-level dep package.
+            module.exports = require("dep");
+          `
+        }
+      }
+    });
+
+    await expect(createPackage({
+      opts: {
+        config: {
+          packages: {
+            one: {
+              cwd: "packages/one",
+              trace: [
+                "index.js"
+              ]
+            }
+          }
+        }
+      }
+    })).to.eventually.be.rejectedWith("Collapsed file conflicts");
+
+    expect(logStub)
+      .to.be.calledWithMatch(
+        "WARN",
+        "Collapsed sources in one (1 conflicts, 2 files): a-file.js"
+      ).and
+      .to.be.calledWithMatch(
+        "WARN",
+        "Collapsed dependencies in one (1 packages, 2 conflicts, 4 files): dep"
+      );
+
+    expect(errStub).to.be.calledWithMatch(
+      "ERROR",
+      "Collapsed file conflicts in one: (3 total conflicts)"
+    );
+  });
+
+  it("has no collapsed files in zip bundle from root", async () => {
+    mock({
+      "a-file.js": `
+        module.exports = "a file (at project root)";
+      `,
+      packages: {
+        one: {
+          "index.js": `
+            // Root level dep import.
+            require("root-dep");
+
+            // Application sources conflicts.
+            require("../../a-file"); // Root
+            require("./a-file"); // In packages/one
+
+            // Transitive nested dep import.
+            module.exports = require("./lib/nested");
+          `,
+          "a-file.js": `
+            module.exports = "a file (in packages/one)";
+          `,
+          lib: {
+            "nested.js": `
+              module.exports = require("dep");
+            `
+          },
+          node_modules: {
+            dep: {
+              "package.json": JSON.stringify({
+                main: "index.js",
+                version: "2.0.0"
+              }),
+              "index.js": `
+                module.exports = "dep";
+              `
+            }
+          }
+        }
+      },
+      node_modules: {
+        dep: {
+          "package.json": JSON.stringify({
+            main: "index.js",
+            version: "1.0.0"
+          }),
+          "index.js": `
+            module.exports = "dep";
+          `
+        },
+        "root-dep": {
+          "package.json": JSON.stringify({
+            main: "index.js",
+            version: "1.0.0"
+          }),
+          "index.js": `
+            // Forces root-level dep package.
+            module.exports = require("dep");
+          `
+        }
+      }
+    });
+
+    await createPackage({
+      opts: {
+        config: {
+          packages: {
+            one: {
+              trace: [
+                "packages/one/index.js"
+              ]
+            }
+          }
+        }
+      }
+    });
+
+
+    expect(logStub)
+      .to.have.been.calledWithMatch("Created 1 packages:");
+
+    expect(await globby("**/*.zip")).to.eql([
+      "one.zip"
+    ]);
+    expect(zipContents("one.zip")).to.eql([
+      "a-file.js",
+      "node_modules/dep/index.js",
+      "node_modules/dep/package.json",
+      "node_modules/root-dep/index.js",
+      "node_modules/root-dep/package.json",
+      "packages/one/a-file.js",
+      "packages/one/index.js",
+      "packages/one/lib/nested.js",
+      "packages/one/node_modules/dep/index.js",
+      "packages/one/node_modules/dep/package.json"
+    ]);
+  });
+
+  it("warns on collapsed files in zip bundle with bail=false", async () => {
+    mock({
+      "a-file.js": `
+        module.exports = "a file (at project root)";
+      `,
+      packages: {
+        one: {
+          "index.js": `
+            // Root level dep import.
+            require("root-dep");
+
+            // Application sources conflicts.
+            require("../../a-file"); // Root
+            require("./a-file"); // In packages/one
+
+            // Transitive nested dep import.
+            module.exports = require("./lib/nested");
+          `,
+          "a-file.js": `
+            module.exports = "a file (in packages/one)";
+          `,
+          lib: {
+            "nested.js": `
+              module.exports = require("@scope/dep");
+            `
+          },
+          node_modules: {
+            "@scope": {
+              dep: {
+                "package.json": JSON.stringify({
+                  main: "index.js",
+                  version: "2.0.0"
+                }),
+                "index.js": `
+                  module.exports = "dep";
+                `
+              }
+            }
+          }
+        }
+      },
+      node_modules: {
+        "@scope": {
+          dep: {
+            "package.json": JSON.stringify({
+              main: "index.js",
+              version: "1.0.0"
+            }),
+            "index.js": `
+              module.exports = "dep";
+            `
+          }
+        },
+        "root-dep": {
+          "package.json": JSON.stringify({
+            main: "index.js",
+            version: "1.0.0"
+          }),
+          "index.js": `
+            // Forces root-level dep package.
+            module.exports = require("@scope/dep");
+          `
+        }
+      }
+    });
+
+    await createPackage({
+      opts: {
+        config: {
+          options: {
+            collapsed: {
+              bail: false
+            }
+          },
+          packages: {
+            one: {
+              cwd: "packages/one",
+              trace: [
+                "index.js"
+              ]
+            }
+          }
+        }
+      }
+    });
+
+    expect(logStub)
+      .to.have.been.calledWithMatch("Created 1 packages:").and
+      .to.be.calledWithMatch(
+        "WARN",
+        "Collapsed sources in one (1 conflicts, 2 files): a-file.js"
+      ).and
+      .to.be.calledWithMatch(
+        "WARN",
+        "Collapsed dependencies in one (1 packages, 2 conflicts, 4 files): @scope/dep"
+      );
+
+    expect(await globby("**/*.zip")).to.eql([
+      "packages/one/one.zip"
+    ]);
+    expect(zipContents("packages/one/one.zip")).to.eql([
+      // NOTE: These 3 files are collapsed and overwritten on expansion.
+      "a-file.js",
+      "node_modules/@scope/dep/index.js",
+      "node_modules/@scope/dep/package.json",
+
+      // Unique files.
+      "node_modules/root-dep/index.js",
+      "node_modules/root-dep/package.json",
+      "a-file.js",
+      "index.js",
+      "lib/nested.js",
+      "node_modules/@scope/dep/index.js",
+      "node_modules/@scope/dep/package.json"
+    ]);
+  });
 
   // https://github.com/FormidableLabs/trace-pkg/issues/11
   it("packages projects with symlinks"); // TODO(11)

@@ -27,6 +27,7 @@ A blazingly fast Node.js zip application packager for AWS Lambda, etc.
   - [Configuration examples](#configuration-examples)
 - [Notes](#notes)
   - [Handling dynamic import misses](#handling-dynamic-import-misses)
+  - [Handling collapsed files](#handling-collapsed-files)
   - [Packaged files](#packaged-files)
   - [Related projects](#related-projects)
 
@@ -69,9 +70,7 @@ Configuration options are generally global (`options.<OPTION_NAME>`) and/or per-
     * _Dependency packages_: If a miss is part of a dependency (e.g., an `npm` package placed within `node_modules`), specify the **package name** first (without including `node_modules`) and then trailing path to file at issue like `"bunyan/lib/bunyan.js": [/* array of patterns */]`.
     * _Ignoring dynamic import misses_: If you just want to ignore the missed dynamic imports for a given application source file or package, just specify and empty array `[]` or falsy value.
 - `options.dynamic.bail` (`Boolean`): Exit CLI with error if dynamic import misses are detected. (default: `false`). See [discussion below](#handling-dynamic-import-misses) regarding handling.
-- `options.collapsed.bail` (`Boolean`):
-    - `// TODO: IMPLEMENT options.collapsed.bail`
-    - `// TODO: write up handling collapsed conflicts section like jetpack has with link here and in log message`
+- `options.collapsed.bail` (`Boolean`): Exit CLI with error if collapsed file conflicts are detected. (default: `true`). See [discussion below](#handling-collapsed-files) regarding collapsed files.
 
 #### Per-package options
 
@@ -83,6 +82,7 @@ Configuration options are generally global (`options.<OPTION_NAME>`) and/or per-
 - `packages.<PKG_NAME>.allowMissing` (`Object.<string, Array<string>>`): Additional configuration to merge with `options.allowMissing`.
 - `packages.<PKG_NAME>.dynamic.resolutions` (`Object.<string, Array<string>>`): Additional configuration to merge with `options.dynamic.resolutions`.
 - `packages.<PKG_NAME>.dynamic.bail` (`Boolean`): Override `options.dynamic.bail` value.
+- `packages.<PKG_NAME>.collapsed.bail` (`Boolean`): Override `options.collapsed.bail` value.
 
 ### Configuration examples
 
@@ -113,6 +113,10 @@ options:
     PKG_NAME:
       - SUB_PKG_NAME_ONE
       - SUB_PKG_NAME_TWO
+
+  collapsed:
+    # Error if any collapsed files in zip are found (default: `true`)
+    bail: true (or) false
 
   dynamic:
     # Error if any dynamic misses are unresolved (default: `false`)
@@ -170,6 +174,8 @@ packages:
     # Extensions of `options.*` fields below...
     ignores: []
     allowMissing: {}
+    collapsed:
+      bail: true
     dynamic:
       bail: true
       resolutions: {}
@@ -191,6 +197,9 @@ packages:
       "ws":                   # Ignore optional, lazy imported dependencies in `ws` package.
         - "bufferutil"
         - "utf-8-validate"
+
+    collapsed:
+      bail: true              # Error on collapsed files in zip.
 
     dynamic:
       bail: true              # Error on unresolved dynamic misses.
@@ -283,7 +292,7 @@ Once we have logging information and the `--report` output, we can start remedyi
 
 Some examples:
 
-[`bunyan`](https://github.com/trentm/node-bunyan): The popular logger library has some optional dependencies that are not meant only for Node.js. To prevent browser bundling tools from including, they use a curious `require` strategy of `require('PKG_NAME' + '')` to defeat parsing. For Jetpack, this means we get dynamic misses reports of:
+[`bunyan`](https://github.com/trentm/node-bunyan): The popular logger library has some optional dependencies that are not meant only for Node.js. To prevent browser bundling tools from including, they use a curious `require` strategy of `require('PKG_NAME' + '')` to defeat parsing. In `trace-pkg`, this means we get dynamic misses reports of:
 
 ```yml
 /PATH/TO/PROJECT/node_modules/bunyan/lib/bunyan.js:
@@ -306,7 +315,7 @@ dynamic:
 [`express`](https://expressjs.com/): The popular server framework dynamically imports engines which produces a dynamic misses report of:
 
 ```yml
-/PATH/TO/PROJECT/mode_modules/express/lib/view.js
+/PATH/TO/PROJECT/mode_modules/express/lib/view.js:
   - "[81:13]: require(mod)"
 ```
 
@@ -319,6 +328,103 @@ dynamic:
 ```
 
 Once we have analyzed all of our misses and added `resolutions` to either ignore the miss or add other imports, we can then set `dynamic.bail = true` to make sure that if future dependency upgrades adds new, unhandled dynamic misses we will get a failed build notification so we know that we're always deploying known, good code.
+
+### Handling collapsed files
+
+**How files are zipped**
+
+Add files above the current working directory (`cwd`) has the potential to lead to potential correctness issues and hard-to-find bugs. For example, if you have files like:
+
+```yml
+- src/foo/bar.js
+- ../node_modules/lodash/index.js
+```
+
+Any file below `cwd` is collapsed into starting **at** current working directory and not above it. So, for the above example, we package / later expand:
+
+```yml
+- src/foo/bar.js                # The same.
+- node_modules/lodash/index.js  # Removed `../`!!!
+```
+
+This often can happen with `node_modules` in monorepos where `node_modules` roots are scattered across different directories and nested. Fortunately, in most cases, it's not that big of a deal. For example:
+
+```yml
+- node_modules/chalk/index.js
+- ../node_modules/lodash/index.js
+```
+
+will collapse when zipped to:
+
+```yml
+- node_modules/chalk/index.js
+- node_modules/lodash/index.js
+```
+
+... but Node.js [resolution rules](https://nodejs.org/api/modules.html#modules_all_together) should resolve and load the collapsed package the same as if it were in the original location.
+
+**Zipping problems**
+
+The real problems occur if there is a path conflict where files collapse to the **same location**. For example, if we have:
+
+```yml
+- node_modules/lodash/index.js
+- ../node_modules/lodash/index.js
+```
+
+this will append files with the same path in the zip file:
+
+```yml
+- node_modules/lodash/index.js
+- node_modules/lodash/index.js
+```
+
+thus collapsing to only **one** file that is later expanded on disk.
+
+**Detecting collapsed files**
+
+The first level is _detecting_ potentially collapsed files that conflict. `trace-pkg` does this automatically with log warnings like:
+
+```
+WARN Collapsed sources in one (1 conflicts, 2 files): server.js
+WARN Collapsed dependencies in one (1 packages, 2 conflicts, 4 files): lodash
+WARN To address collapsed file conflicts, see logs & read: https://npm.im/trace-pkg#handling-collapsed-files
+```
+
+In the above example, collapsed "sources" are application files _outside_ of `node_modules` that were collapsed. Collapsed "dependencies" are files that are part of `node_modules` packages that we summarize for convenience at the package name level. Typically, projects encountering collapsed file conflicts do so with dependencies in a monorepo or other structure tha packages below the current working directory.
+
+To ensure you never accidentally miss collapsed files, the `options` / `packages.<PKG_NAME>` field is set by default to `collapsed.bail = true` so that `trace-pkg` will throw an error if any collapsed conflicts are detected. Please consider keeping this enabled to save you from potentially bad production runtime errors!
+
+**Solving collapsed file conflicts**
+
+So how do we fix the problem?
+
+The absolute first and foremost answer is to **set `cwd` and run `trace-pkg` from at the root of your project**.
+
+For example, if you have a monorepo like:
+
+```
+node_modules/**
+packages/
+  one/
+    handler.js
+    node_modules/**
+  two/
+    handler.js
+    node_modules/**
+```
+
+Set up your configuration with the handlers from full paths (e.g., `packages/one|two/handler.js`) and package from the root of the project. By contrast, if you set `cwd` to `packages/one|two` and have Lambda handler configurations pointing to `index.js` within those `cwd`s, then you risk have collapsed files.
+
+If you absolutely _must_ set `cwd` in a manner where files may be included in the zip file above it, then here are some additional tips:
+
+- **Start with a report**: Generate a full packaging report with the CLI `--report` option (for faster reports, also use `--dry-run` to skip zip file creation). Inspect the logs and the complete list of `collapsed` files per package in the output. Then, with an understanding of what is being collapsed consider some of the following heuristics / tweaks....
+
+- **Mirror exact same dependencies in `package.json`s**: In our previous example with two `lodash`s, even if `lodash` isn't declared in either `../package.json` or `package.json` we can manually add it to both at the same pinned version (e.g., `"lodash": "4.17.15"`) to force it to be the same no matter where npm or Yarn place the dependency on disk.
+
+- **Use Yarn Resolutions**: If you are using Yarn and [resolutions](https://classic.yarnpkg.com/en/docs/selective-version-resolutions/) are an option that works for your project, they are a straightforward way to ensure that only one of a dependency exists on disk, solving collapsing problems.
+
+... but ultimately the above hacks are fairly brittle and not general purpose fixes. Do yourself a favor, and just always run with `cwd` at the project root. 😉
 
 ### Packaged files
 
