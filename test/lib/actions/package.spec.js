@@ -1047,31 +1047,35 @@ describe("lib/actions/package", () => {
           `,
           lib: {
             "nested.js": `
-              module.exports = require("dep");
+              module.exports = require("@scope/dep");
             `
           },
           node_modules: {
-            dep: {
-              "package.json": JSON.stringify({
-                main: "index.js",
-                version: "2.0.0"
-              }),
-              "index.js": `
-                module.exports = "dep";
-              `
+            "@scope": {
+              dep: {
+                "package.json": JSON.stringify({
+                  main: "index.js",
+                  version: "2.0.0"
+                }),
+                "index.js": `
+                  module.exports = "dep";
+                `
+              }
             }
           }
         }
       },
       node_modules: {
-        dep: {
-          "package.json": JSON.stringify({
-            main: "index.js",
-            version: "1.0.0"
-          }),
-          "index.js": `
-            module.exports = "dep";
-          `
+        "@scope": {
+          dep: {
+            "package.json": JSON.stringify({
+              main: "index.js",
+              version: "1.0.0"
+            }),
+            "index.js": `
+              module.exports = "dep";
+            `
+          }
         },
         "root-dep": {
           "package.json": JSON.stringify({
@@ -1080,7 +1084,7 @@ describe("lib/actions/package", () => {
           }),
           "index.js": `
             // Forces root-level dep package.
-            module.exports = require("dep");
+            module.exports = require("@scope/dep");
           `
         }
       }
@@ -1114,23 +1118,26 @@ describe("lib/actions/package", () => {
       ).and
       .to.be.calledWithMatch(
         "WARN",
-        "Collapsed dependencies in one (1 packages, 2 conflicts, 4 files): dep"
+        "Collapsed dependencies in one (1 packages, 2 conflicts, 4 files): @scope/dep"
       );
 
     expect(await globby("**/*.zip")).to.eql([
       "packages/one/one.zip"
     ]);
     expect(zipContents("packages/one/one.zip")).to.eql([
-      "a-file.js", // NOTE: This file is collapsed and overwritten on expansion
-      "node_modules/dep/index.js",
-      "node_modules/dep/package.json",
+      // NOTE: These 3 files are collapsed and overwritten on expansion.
+      "a-file.js",
+      "node_modules/@scope/dep/index.js",
+      "node_modules/@scope/dep/package.json",
+
+      // Unique files.
       "node_modules/root-dep/index.js",
       "node_modules/root-dep/package.json",
       "a-file.js",
       "index.js",
       "lib/nested.js",
-      "node_modules/dep/index.js",
-      "node_modules/dep/package.json"
+      "node_modules/@scope/dep/index.js",
+      "node_modules/@scope/dep/package.json"
     ]);
   });
 
