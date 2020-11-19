@@ -14,6 +14,8 @@ const TMP = os.tmpdir();
 const CLI = path.resolve(__dirname, "../../bin/trace-pkg.js");
 const FIXTURES_DIR = path.resolve(__dirname, "fixtures");
 
+const E2E_TIMEOUT = 5000;
+
 describe("e2e/trace-pkg", () => {
   let tmpDir;
 
@@ -29,7 +31,9 @@ describe("e2e/trace-pkg", () => {
   });
 
   describe("package", () => {
-    it("performs concurrent bundles", async () => {
+    it("performs concurrent bundles", async function () {
+      this.timeout(E2E_TIMEOUT); // eslint-disable-line no-invalid-this
+
       const cwd = path.join(tmpDir, "simple");
       await fs.copy(path.join(FIXTURES_DIR, "simple"), cwd);
 
@@ -66,7 +70,9 @@ describe("e2e/trace-pkg", () => {
       ]);
     });
 
-    it("handles errors from worker bundle process", async () => {
+    it("handles errors from worker bundle process", async function () {
+      this.timeout(E2E_TIMEOUT); // eslint-disable-line no-invalid-this
+
       const cwd = path.join(tmpDir, "error");
       await fs.copy(path.join(FIXTURES_DIR, "error"), cwd);
 
