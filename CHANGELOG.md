@@ -1,7 +1,7 @@
 Changes
 =======
 
-## UNRELEASED
+## 0.3.0
 
 * Feature: Add `collapsed.bail` configuration option.
   [#3](https://github.com/FormidableLabs/trace-pkg/issues/3)
