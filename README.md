@@ -333,14 +333,14 @@ Once we have analyzed all of our misses and added `resolutions` to either ignore
 
 **How files are zipped**
 
-Add files above the current working directory (`cwd`) has the potential to lead to potential correctness issues and hard-to-find bugs. For example, if you have files like:
+Adding files above the current working directory (`cwd`) has the potential to lead to potential correctness issues and hard-to-find bugs. For example, if you have files like:
 
 ```yml
 - src/foo/bar.js
 - ../node_modules/lodash/index.js
 ```
 
-Any file below `cwd` is collapsed into starting **at** current working directory and not above it. So, for the above example, we package / later expand:
+Any file above `cwd` is collapsed into starting **at** current working directory and not above it. So, for the above example, we package and then later expand to:
 
 ```yml
 - src/foo/bar.js                # The same.
@@ -383,7 +383,7 @@ thus collapsing to only **one** file that is later expanded on disk.
 
 **Detecting collapsed files**
 
-The first level is _detecting_ potentially collapsed files that conflict. `trace-pkg` does this automatically with log warnings like:
+The first step to remedying such as situation is _detecting_ potentially collapsed files that conflict. `trace-pkg` does this automatically with log warnings like:
 
 ```
 WARN Collapsed sources in one (1 conflicts, 2 files): server.js
@@ -391,7 +391,7 @@ WARN Collapsed dependencies in one (1 packages, 2 conflicts, 4 files): lodash
 WARN To address collapsed file conflicts, see logs & read: https://npm.im/trace-pkg#handling-collapsed-files
 ```
 
-In the above example, collapsed "sources" are application files _outside_ of `node_modules` that were collapsed. Collapsed "dependencies" are files that are part of `node_modules` packages that we summarize for convenience at the package name level. Typically, projects encountering collapsed file conflicts do so with dependencies in a monorepo or other structure tha packages below the current working directory.
+In the above example, collapsed "sources" are application files _outside_ of `node_modules` that were collapsed. Collapsed "dependencies" are files that are part of `node_modules` packages that we summarize for convenience at the package name level. Typically, projects encountering collapsed file conflicts do so with dependencies in a monorepo or other structure that packages above the current working directory.
 
 To ensure you never accidentally miss collapsed files, the `options` / `packages.<PKG_NAME>` field is set by default to `collapsed.bail = true` so that `trace-pkg` will throw an error if any collapsed conflicts are detected. Please consider keeping this enabled to save you from potentially bad production runtime errors!
 
