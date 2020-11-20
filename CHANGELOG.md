@@ -1,7 +1,7 @@
 Changes
 =======
 
-## UNRELEASED
+## 0.3.1
 
 * Feature: Add `includeSourceMaps` configuration option.
 
