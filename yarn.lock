@@ -1648,6 +1648,13 @@ is-core-module@^2.0.0:
   dependencies:
     has "^1.0.3"
 
+is-core-module@^2.1.0:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/is-core-module/-/is-core-module-2.1.0.tgz#a4cc031d9b1aca63eecbd18a650e13cb4eeab946"
+  integrity sha512-YcV7BgVMRFRua2FqQzKtTDMz8iCuLEyGKjr70q8Zm1yy2qKcurbFEd79PAdHV77oL3NrAaOVQIbMmiHQCHB7ZA==
+  dependencies:
+    has "^1.0.3"
+
 is-date-object@^1.0.1:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/is-date-object/-/is-date-object-1.0.2.tgz#bda736f2cd8fd06d32844e7743bfa7494c3bfd7e"
@@ -2605,6 +2612,14 @@ resolve@^1.10.0, resolve@^1.12.0, resolve@^1.13.1, resolve@^1.17.0, resolve@^1.3
     is-core-module "^2.0.0"
     path-parse "^1.0.6"
 
+resolve@^1.19.0:
+  version "1.19.0"
+  resolved "https://registry.yarnpkg.com/resolve/-/resolve-1.19.0.tgz#1af5bf630409734a067cae29318aac7fa29a267c"
+  integrity sha512-rArEXAgsBG4UgRGcynxWIWKFvh/XZCcS8UJdHhwy91zwAvCZIbcs+vAbflgBnNjYMs/i/i+/Ux6IZhML1yPvxg==
+  dependencies:
+    is-core-module "^2.1.0"
+    path-parse "^1.0.6"
+
 reusify@^1.0.4:
   version "1.0.4"
   resolved "https://registry.yarnpkg.com/reusify/-/reusify-1.0.4.tgz#90da382b1e126efc02146e90845a88db12925d76"
@@ -2961,13 +2976,13 @@ to-regex-range@^5.0.1:
   dependencies:
     is-number "^7.0.0"
 
-trace-deps@^0.3.5:
-  version "0.3.5"
-  resolved "https://registry.yarnpkg.com/trace-deps/-/trace-deps-0.3.5.tgz#b764aaba4f7194a3159d13c47fde1d1e2e5888ea"
-  integrity sha512-vM3FcrMcgyVOLrhbeqcZLT7W5SIx8nIPvTtvNoBWupj93cylOGjd4fDxOQdGyadayELdsSEwBfIkXR8JKX6LYQ==
+trace-deps@^0.3.6:
+  version "0.3.6"
+  resolved "https://registry.yarnpkg.com/trace-deps/-/trace-deps-0.3.6.tgz#e04cc5ddccd9dfdaea49a3ea56b76c9ac6d6cbb0"
+  integrity sha512-TbaCFmCUuznfd9NjjEg9MYmk2PnYls6L8kAf9f1+MBRjs33CmxehBkkFdtgdHC9UBHN43zAVUPveqi3YBZ3SBQ==
   dependencies:
     acorn-node "^2.0.1"
-    resolve "^1.17.0"
+    resolve "^1.19.0"
 
 traverse@^0.6.6:
   version "0.6.6"
