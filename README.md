@@ -449,7 +449,7 @@ Source maps in frontend web applications that accompany minimized application co
 
 _Source map benefits_:
 
-- **Node.js stack traces**: If you are running in Node v12+ with [experimental `--enable-source-maps` flag](https://nodejs.org/dist/latest-v12.x/docs/api/cli.html#cli_enable_source_maps) enabled, then Node.js will translate runtime errors to stack traces to original source files.
+- **Node.js stack traces**: If you are running in Node v12+ with the [experimental `--enable-source-maps` flag](https://nodejs.org/dist/latest-v12.x/docs/api/cli.html#cli_enable_source_maps) enabled, then Node.js will translate runtime errors to stack traces to original source files.
 - **Error aggregation**: Some other services, like error aggregation services, can use the source maps to similarly gather runtime exceptions and translate stack traces.
     - It should be mentioned, however, that many of these services do not need the source maps to be colocated with the application source code in the runtime, but can instead be uploaded directly to the service.
 
