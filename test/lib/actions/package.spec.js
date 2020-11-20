@@ -366,6 +366,11 @@ describe("lib/actions/package", () => {
               trace: [
                 "src/one.js"
               ],
+              include: [
+                // Directly include the map file to fully test out our
+                // cached file stats functionality.
+                "src/one/dep.js.map"
+              ],
               dynamic: {
                 resolutions: {
                   "./src/one/dep.js": [
