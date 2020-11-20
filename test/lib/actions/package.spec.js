@@ -297,6 +297,134 @@ describe("lib/actions/package", () => {
     ]);
   });
 
+  it("traces source maps", async () => {
+    // TODO: REMOVE
+    logStub.restore();
+
+    mock({
+      src: {
+        "one.js": `
+          module.exports = require('./one/dep');
+
+          //# sourceMappingURL=one.js.map
+        `,
+        "one.js.map": "{\"not\":\"real\"}",
+        one: {
+          "dep.js": `
+            require(process.env.DYNAMIC_ONE);
+
+            module.exports = "dep";
+
+            //# sourceMappingURL=../one/dep.js.map
+          `,
+          "dep.js.map": "{\"not\":\"real\"}",
+          "extra-app-file.js": "module.exports = 'extra-app-file';"
+        },
+        two: {
+          "index.js": "module.exports = require('./dep2');",
+          "dep2.js": `
+            require(process.env.DYNAMIC_TWO);
+
+            module.exports = "dep";
+
+            //TODO ENABLE //# sourceMappingURL=not/found/on/disk.js.map
+          `
+        }
+      },
+      node_modules: {
+        dep: {
+          "package.json": JSON.stringify({
+            main: "index.js"
+          }),
+          "index.js": `
+            require(process.env.DYNAMIC_ANOTHER_DEP);
+
+            module.exports = "dep";
+          `
+        },
+        "another-dep": {
+          "package.json": JSON.stringify({
+            main: "index.js"
+          }),
+          "index.js": "module.exports = 'another-dep';"
+        }
+      }
+    });
+
+    await createPackage({
+      opts: {
+        config: {
+          options: {
+            includeSourceMaps: true,
+            dynamic: {
+              resolutions: {
+                "dep/index.js": [
+                  "another-dep"
+                ]
+              }
+            }
+          },
+          packages: {
+            "one.zip": {
+              trace: [
+                "src/one.js"
+              ],
+              dynamic: {
+                resolutions: {
+                  "./src/one/dep.js": [
+                    "dep",
+                    "./extra-app-file.js"
+                  ]
+                }
+              }
+            },
+            two: {
+              // Different CWD, so dynamic.resolutions are relative to that.
+              cwd: "./src/two",
+              trace: [
+                "index.js"
+              ],
+              dynamic: {
+                resolutions: {
+                  "./dep2.js": [
+                    "dep"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // TODO: REENABLE
+    // expect(logStub).to.have.been.calledWithMatch("Created 2 packages:");
+
+    expect(await globby("{,src/two/}*.zip")).to.eql([
+      "one.zip",
+      "src/two/two.zip"
+    ]);
+    expect(zipContents("one.zip")).to.eql([
+      "node_modules/another-dep/index.js",
+      "node_modules/another-dep/package.json",
+      "node_modules/dep/index.js",
+      "node_modules/dep/package.json",
+      "src/one.js",
+      "src/one.js.map",
+      "src/one/dep.js",
+      "src/one/dep.js.map",
+      "src/one/extra-app-file.js"
+    ]);
+    expect(zipContents("src/two/two.zip")).to.eql([
+      "node_modules/another-dep/index.js",
+      "node_modules/another-dep/package.json",
+      "node_modules/dep/index.js",
+      "node_modules/dep/package.json",
+      "dep2.js",
+      "index.js"
+    ]);
+  });
+
   it("ignores missing packages", async () => {
     mock({
       src: {
