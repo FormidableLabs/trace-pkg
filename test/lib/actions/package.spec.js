@@ -298,9 +298,6 @@ describe("lib/actions/package", () => {
   });
 
   it("traces source maps", async () => {
-    // TODO: REMOVE
-    logStub.restore();
-
     mock({
       src: {
         "one.js": `
@@ -327,7 +324,7 @@ describe("lib/actions/package", () => {
 
             module.exports = "dep";
 
-            //TODO ENABLE //# sourceMappingURL=not/found/on/disk.js.map
+            //# sourceMappingURL=not/found/on/disk.js.map
           `
         }
       },
@@ -397,8 +394,7 @@ describe("lib/actions/package", () => {
       }
     });
 
-    // TODO: REENABLE
-    // expect(logStub).to.have.been.calledWithMatch("Created 2 packages:");
+    expect(logStub).to.have.been.calledWithMatch("Created 2 packages:");
 
     expect(await globby("{,src/two/}*.zip")).to.eql([
       "one.zip",
