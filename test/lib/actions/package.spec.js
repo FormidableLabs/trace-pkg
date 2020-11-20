@@ -396,7 +396,7 @@ describe("lib/actions/package", () => {
 
     expect(logStub)
       .to.have.been.calledWithMatch("Created 2 packages:").and
-      .to.have.been.calledWithMatch("WARN", "Source map misses in two:");
+      .to.have.been.calledWithMatch("WARN", "Missing source map files in two:");
 
     expect(await globby("{,src/two/}*.zip")).to.eql([
       "one.zip",
