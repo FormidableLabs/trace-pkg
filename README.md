@@ -28,6 +28,7 @@ A blazingly fast Node.js zip application packager for AWS Lambda, etc.
 - [Notes](#notes)
   - [Handling dynamic import misses](#handling-dynamic-import-misses)
   - [Handling collapsed files](#handling-collapsed-files)
+  - [Including source maps](#including-source-maps)
   - [Packaged files](#packaged-files)
   - [Related projects](#related-projects)
 
@@ -61,8 +62,7 @@ Configuration options are generally global (`options.<OPTION_NAME>`) and/or per-
 - `options.cwd` (`String`): Current working directory from which to read input files as well as output zip bundles (default: `process.cwd()`).
 - `options.concurrency` (`Number`): The number of independent package tasks to run off the main execution thread. If `1`, then run tasks serially in main thread. If `2+` run off main thread with `concurrency` number of workers. If `0`, then use "number of CPUs" value. (default: `1`).
     - Can be overridden from CLI with `--concurrency <NUMBER>`
-- `options.includeSourceMaps` (`Boolean`): Include source map paths from files that are found during tracing (not inclusion via `include`) and present on-disk. Source map paths inferred but not found are ignored. (default: `false`).
-    - **TODO: ADD DISCUSSION SECTION OF SOURCE MAPS AND WHY YOU MAY NOT WANT THEM.**
+- `options.includeSourceMaps` (`Boolean`): Include source map paths from files that are found during tracing (not inclusion via `include`) and present on-disk. Source map paths inferred but not found are ignored. (default: `false`). Please see [discussion below](#including-source-maps) to evaluate whether or not you should use this feature.
 - `options.ignores` (`Array<string>`): A set of package path prefixes up to a directory level (e.g., `react` or `mod/lib`) to skip tracing on. This is particularly useful when you are excluding a package like `aws-sdk` that is already provided for your lambda.
 - `options.allowMissing` (`Object.<string, Array<string>>`): A way to allow certain packages to have potentially failing dependencies. Specify each object key as a package name and value as an array of dependencies that _might_ be missing on disk. If the sub-dependency is found, then it is included in the bundle (this part distinguishes this option from `ignores`). If not, it is skipped without error.
 - `options.dynamic.resolutions` (`Object.<string, Array<string>>`): Handle dynamic import misses by providing a key to match misses on and an array of additional glob patterns to trace and include in the application bundle.
@@ -106,6 +106,9 @@ options:
   #
   # Directory from which to read input files as well as output zip bundles.
   cwd: /ABSOLUTE/PATH (or) ./a/relative/path/to/process.cwd
+
+  # Include reference source maps from traced files? (default: `false`)
+  includeSourceMaps: true (or) false
 
   # Package path prefixes up to a directory level to skip tracing on.
   ignores:
@@ -175,6 +178,7 @@ packages:
       - <FILE_TWO>.js
 
     # Extensions of `options.*` fields below...
+    includeSourceMaps: false
     ignores: []
     allowMissing: {}
     collapsed:
@@ -185,19 +189,21 @@ packages:
 
   # EXAMPLES
   # ========
-  my-function:                # produces `my-function.zip`
+  my-function:                # Produces `my-function.zip`
     trace:
-      - src/server.js         # trace individual file `src/server.js`
-      - src/config/**/*.js    # trace all JS files in `src/config`
+      - src/server.js         # Trace individual file `src/server.js`
+      - src/config/**/*.js    # Trace all JS files in `src/config`
+
+    includeSourceMaps: true   # Include referenced source maps found on disk for traced files
 
     include:
-      - assets/**/*.css       # include all CSS files in `assets`
+      - assets/**/*.css       # Include all CSS files in `assets`
 
     ignores:
       - "aws-sdk"             # Skip pkgs already installed on Lambda
 
     allowMissing:
-      "ws":                   # Ignore optional, lazy imported dependencies in `ws` package.
+      "ws":                   # Ignore optional, lazy imported dependencies in `ws` package
         - "bufferutil"
         - "utf-8-validate"
 
@@ -428,6 +434,28 @@ If you absolutely _must_ set `cwd` in a manner where files may be included in th
 - **Use Yarn Resolutions**: If you are using Yarn and [resolutions](https://classic.yarnpkg.com/en/docs/selective-version-resolutions/) are an option that works for your project, they are a straightforward way to ensure that only one of a dependency exists on disk, solving collapsing problems.
 
 ... but ultimately the above hacks are fairly brittle and not general purpose fixes. Do yourself a favor, and just always run with `cwd` at the project root. 😉
+
+### Including source maps
+
+Node.js application files are often transpiled from some original source code into a final runtime application file with tools like Babel, TypeScript, etc. Source map files are large JSON files that map the runtime file back to the original source file for things like exception stack traces, etc. When produced by tooling for Node.js applications are typically placed next to the application file (e.g., `app.js` has `app.js.map` file at the same level).
+
+`trace-pkg` will add source map files to output zip bundles that exist on disk that are reference in `sourceMappingURL` comments in application source files discovered in `trace` configurations when `includeSourceMaps = true` in `options` or `packages.<PKG_NAME>`-level configuration. Files added via `include` will **not** have source map files automatically added, but your glob pattern for `include` should be able to easily _also_ include ones for analogous `*.map` files (this avoids expensive additional file I/O that tracing does not).
+
+**Should I include source maps in my bundle?**
+
+OK, so we _can_ include source maps in our output bundles. The bigger question is **should** we?
+
+Source maps in frontend web applications that accompany minimized application code are often critical for debugging so that frontend developers can actually read and debug the otherwise gibberish code. But for backend Node.js application code, the transpiled files are typically very readable with real variable names, spacing, etc. It is thus typically of less importance to have full source map support for Node.js code.
+
+_Source map benefits_:
+
+- **Node.js stack traces**: If you are running in Node v12+ with [experimental `--enable-source-maps` flag](https://nodejs.org/dist/latest-v12.x/docs/api/cli.html#cli_enable_source_maps) enabled, then Node.js will translate runtime errors to stack traces to original source files.
+- **Error aggregation**: Some other services, like error aggregation services, can use the source maps to similarly gather runtime exceptions and translate stack traces.
+    - It should be mentioned, however, that many of these services do not need the source maps to be colocated with the application source code in the runtime, but can instead be uploaded directly to the service.
+
+_Source map drawbacks_:
+
+- **Zip bundle size impact**: Source map files vary in size but are often almost the same byte size as the transpiled application source file. This means that for every application file that you trace and include a source map with you will be nearly **doubling** the size in your ultimate application bundle. As `trace-pkg` is typically zipping files for use in AWS Lambda, keeping bundle size as slim as possible is a critical best practice -- there are limits on the size of a zip file you are allowed to deploy, and anecdotal (but common) data that larger bundles tend to perform worse in production.
 
 ### Packaged files
 
