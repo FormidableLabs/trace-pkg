@@ -1,6 +1,10 @@
 Changes
 =======
 
+## 0.3.2
+
+* Bug: Make `concurrency: 1` / "serial" mode actually run serially.
+
 ## 0.3.1
 
 * Feature: Add `includeSourceMaps` configuration option.
