@@ -45,10 +45,17 @@ const getArgs = async (args) => {
       describe: "Generate extended report",
       type: "boolean"
     })
+    .option("silent", {
+      alias: "s",
+      describe: "Don't ouput logs to the console",
+      type: "boolean"
+    })
     // Logistical
     .exitProcess(false)
-    .help().alias("help", "h")
-    .version(version).alias("version", "v")
+    .help()
+    .alias("help", "h")
+    .version(version)
+    .alias("version", "v")
     .strict();
 
   // Validate
