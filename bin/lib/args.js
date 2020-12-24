@@ -65,7 +65,8 @@ const getArgs = async (args) => {
     version: !!argv.version,
     dryRun: !!argv.dryRun,
     concurrency: argv.concurrency,
-    report: argv.report
+    report: argv.report,
+    silent: argv.silent
   };
 
   // Convert config file to full object.

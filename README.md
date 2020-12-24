@@ -45,6 +45,7 @@ Options:
       --concurrency  Parallel processes to use (default: 1)            [number]
   -d, --dry-run      Don't actually produce output bundle              [boolean]
   -r, --report       Generate extended report                          [boolean]
+  -s, --silent       Don't output logs to the console                  [boolean]
   -h, --help         Show help                                         [boolean]
   -v, --version      Show version number                               [boolean]
 ```
