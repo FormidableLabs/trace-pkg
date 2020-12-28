@@ -1,6 +1,10 @@
 Changes
 =======
 
+## UNRELEASED
+
+* Feature: add `silent` configuration option.
+
 ## 0.3.2
 
 * Bug: Make `concurrency: 1` / "serial" mode actually run serially.
