@@ -5,6 +5,7 @@ Changes
 
 * Feature: add `--silent` CLI flag.
   [#12](https://github.com/FormidableLabs/trace-pkg/issues/12)
+  (*[Burnett2k][]*)
 
 ## 0.3.2
 
@@ -48,3 +49,5 @@ Changes
 ## 0.0.1
 
 * Initial release.
+
+[Burnett2k]: https://github.com/Burnett2k
