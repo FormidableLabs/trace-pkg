@@ -7,7 +7,7 @@ const sinon = require("sinon");
 const globby = require("globby");
 
 const createPackage = require("../../../lib/actions/package").package;
-
+const { setLoggingOptions } = require("../../../lib/log");
 const { zipContents } = require("../../util/file");
 
 describe("lib/actions/package", () => {
@@ -15,6 +15,7 @@ describe("lib/actions/package", () => {
   let logStub;
 
   beforeEach(() => {
+    setLoggingOptions({ silent: false });
     mock({});
     sandbox = sinon.createSandbox();
     logStub = sandbox.stub(console, "log");

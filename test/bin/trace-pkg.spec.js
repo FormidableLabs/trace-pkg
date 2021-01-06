@@ -7,6 +7,7 @@ const globby = require("globby");
 const pkg = require("../../package.json");
 const { NAME } = require("../../bin/lib/args");
 const { cli } = require("../../bin/trace-pkg");
+const { setLoggingOptions } = require("../../lib/log");
 
 const { zipContents } = require("../util/file");
 
@@ -15,6 +16,7 @@ describe("bin/trace-pkg", () => {
   let logStub;
 
   beforeEach(() => {
+    setLoggingOptions({ silent: false });
     mock({});
     sandbox = sinon.createSandbox();
     logStub = sandbox.stub(console, "log");
