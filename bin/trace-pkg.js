@@ -3,7 +3,7 @@
 "use strict";
 
 const { getArgs } = require("./lib/args");
-const { error } = require("../lib/log");
+const { error, setLoggingOptions } = require("../lib/log");
 const createPackage = require("../lib/actions/package").package;
 
 // ============================================================================
@@ -11,6 +11,7 @@ const createPackage = require("../lib/actions/package").package;
 // ============================================================================
 const cli = async ({ args } = {}) => {
   const { opts } = await getArgs(args);
+  setLoggingOptions(opts);
 
   if (!(opts.help || opts.version)) {
     await createPackage({ opts });

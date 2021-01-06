@@ -1,5 +1,7 @@
 "use strict";
 
+const path = require("path");
+
 const mock = require("mock-fs");
 const sinon = require("sinon");
 const globby = require("globby");
@@ -7,14 +9,21 @@ const globby = require("globby");
 const pkg = require("../../package.json");
 const { NAME } = require("../../bin/lib/args");
 const { cli } = require("../../bin/trace-pkg");
+const { setLoggingOptions } = require("../../lib/log");
 
 const { zipContents } = require("../util/file");
+
+// Normalize across OS for relative paths.
+const normPath = (filePath) => path.resolve(filePath)
+  .split("/")
+  .join(path.sep);
 
 describe("bin/trace-pkg", () => {
   let sandbox;
   let logStub;
 
   beforeEach(() => {
+    setLoggingOptions({ silent: false });
     mock({});
     sandbox = sinon.createSandbox();
     logStub = sandbox.stub(console, "log");
@@ -151,6 +160,70 @@ describe("bin/trace-pkg", () => {
         "src/two.css",
         "src/two.json"
       ]);
+    });
+
+    it("produces a report in silent mode", async () => {
+      mock({
+        "trace-pkg.yml": `
+          packages:
+            one:
+              cwd: functions/one
+              output: ../../.build/one.zip
+              trace:
+                - index.js
+        `.trim(/ {10}/gm, ""),
+        "package.json": JSON.stringify({}),
+        functions: {
+          one: {
+            "index.js": "module.exports = require('./src/dep');",
+            src: {
+              "dep.js": "module.exports = require('./deeper/dep');",
+              deeper: {
+                "dep.js": `
+                  require("local-nm-pkg");
+                  module.exports = "deeper-dep";
+                `
+              }
+            },
+            "package.json": JSON.stringify({
+              main: "index.js"
+            }),
+            node_modules: {
+              "local-nm-pkg": {
+                "package.json": JSON.stringify({
+                  main: "index.js"
+                }),
+                "index.js": "module.exports = 'local-nm-pkg';"
+              }
+            }
+          }
+        }
+      });
+
+      await cli({ args: [
+        "--config",
+        "trace-pkg.yml",
+        "--report",
+        "--dry-run",
+        "--silent"
+      ] });
+
+      expect(logStub).to.have.been
+        .calledWithMatch("## Configuration")
+        .calledWithMatch("config:")
+        .calledWithMatch("## Output")
+        .calledWithMatch("one:")
+        .calledWithMatch(`
+    files:
+      - ${normPath("functions/one/index.js")}
+      - ${normPath("functions/one/node_modules/local-nm-pkg/index.js")}
+      - ${normPath("functions/one/node_modules/local-nm-pkg/package.json")}
+      - ${normPath("functions/one/package.json")}
+      - ${normPath("functions/one/src/deeper/dep.js")}
+      - ${normPath("functions/one/src/dep.js")}
+        `.trim());
+
+      expect(await globby(".build/*.zip")).to.eql([]);
     });
   });
 });
