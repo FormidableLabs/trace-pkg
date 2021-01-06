@@ -71,7 +71,6 @@ describe("lib/log", () => {
     });
 
     it("log shouldn't call console.log", () => {
-      setLoggingOptions({ silent: true });
       log();
       expect(logStub).to.not.be.called;
     });
