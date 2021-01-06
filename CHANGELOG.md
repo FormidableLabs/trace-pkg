@@ -1,7 +1,7 @@
 Changes
 =======
 
-## UNRELEASED
+## 0.3.3
 
 * Feature: add `--silent` CLI flag.
   [#12](https://github.com/FormidableLabs/trace-pkg/issues/12)
