@@ -65,7 +65,7 @@ Configuration options are generally global (`options.<OPTION_NAME>`) and/or per-
     - Can be overridden from CLI with `--concurrency <NUMBER>`
 - `options.includeSourceMaps` (`Boolean`): Include source map paths from files that are found during tracing (not inclusion via `include`) and present on-disk. Source map paths inferred but not found are ignored. (default: `false`). Please see [discussion below](#including-source-maps) to evaluate whether or not you should use this feature.
 - `options.ignores` (`Array<string>`): A set of package path prefixes up to a directory level (e.g., `react` or `mod/lib`) to skip tracing on. This is particularly useful when you are excluding a package like `aws-sdk` that is already provided for your lambda.
-- `options.allowMissing` (`Object.<string, Array<string>>`): A way to allow certain packages to have potentially failing dependencies. Specify each object key as a package name and value as an array of dependencies that _might_ be missing on disk. If the sub-dependency is found, then it is included in the bundle (this part distinguishes this option from `ignores`). If not, it is skipped without error.
+- `options.allowMissing` (`Object.<string, Array<string>>`): A way to allow certain packages to have potentially failing dependencies. Specify each object key as either (1) an source file path relative to `cwd` that begins with a `./` or (2) a package name and privide a value as an array of dependencies that _might_ be missing on disk. If the sub-dependency is found, then it is included in the bundle (this part distinguishes this option from `ignores`). If not, it is skipped without error.
 - `options.dynamic.resolutions` (`Object.<string, Array<string>>`): Handle dynamic import misses by providing a key to match misses on and an array of additional glob patterns to trace and include in the application bundle.
     - _Application source files_: If a miss is an application source file (e.g., not within `node_modules`), specify the **relative path** (from the package-level `cwd`) to it like `"./src/server/router.js": [/* array of patterns */]`.
         - **Note**: To be an application source path, it **must** be prefixed with a dot (e.g., `./src/server.js`, `../lower/src/server.js`). Basically, like the Node.js `require()` rules go for a local path file vs. a package dependency.
@@ -83,7 +83,7 @@ Configuration options are generally global (`options.<OPTION_NAME>`) and/or per-
 - `packages.<PKG_NAME>.trace` (`Array<string>`): A list of [fast-glob][] glob patterns to match JS files that will be further traced to infer all imported dependencies via static analysis. Use this option to include your source code files that comprises your application.
 - `packages.<PKG_NAME>.includeSourceMaps` (`Boolean`): Additional configuration to override value of `options.includeSourceMaps`.
 - `packages.<PKG_NAME>.ignores` (`Array<string>`): Additional configuration to merge with `options.ignores`.
-- `packages.<PKG_NAME>.allowMissing` (`Object.<string, Array<string>>`): Additional configuration to merge with `options.allowMissing`.
+- `packages.<PKG_NAME>.allowMissing` (`Object.<string, Array<string>>`): Additional configuration to merge with `options.allowMissing`. Note that for source file paths, all of the paths are resolved to `cwd`, so if you provide both a global and package-level `cwd` the relative paths probably won't resolve as you would expect them to.
 - `packages.<PKG_NAME>.dynamic.resolutions` (`Object.<string, Array<string>>`): Additional configuration to merge with `options.dynamic.resolutions`.
 - `packages.<PKG_NAME>.dynamic.bail` (`Boolean`): Override `options.dynamic.bail` value.
 - `packages.<PKG_NAME>.collapsed.bail` (`Boolean`): Override `options.collapsed.bail` value.
@@ -204,6 +204,8 @@ packages:
       - "aws-sdk"             # Skip pkgs already installed on Lambda
 
     allowMissing:
+      "./src/app/path.js":    # Application code with allowed missing dependencies.
+        - "missing-pkg-within-app-sources"
       "ws":                   # Ignore optional, lazy imported dependencies in `ws` package
         - "bufferutil"
         - "utf-8-validate"

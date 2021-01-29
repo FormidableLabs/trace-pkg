@@ -3,9 +3,11 @@ Changes
 
 ## UNRELEASED
 
+* Feature: Support application source paths as keys in `allowMissing`.
+
 ## 0.3.3
 
-* Feature: add `--silent` CLI flag.
+* Feature: Add `--silent` CLI flag.
   [#12](https://github.com/FormidableLabs/trace-pkg/issues/12)
   (*[Burnett2k][]*)
 
