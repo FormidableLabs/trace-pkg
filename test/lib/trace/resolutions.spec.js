@@ -2,7 +2,8 @@
 
 const path = require("path");
 
-const { normalizeResolutions, resolveMisses } = require("../../../lib/trace/resolutions");
+const { normalizeFileKeys } = require("../../../lib/util/path");
+const { resolveMisses } = require("../../../lib/trace/resolutions");
 
 const addResolveMisses = ({ resolved = [], missed = {} } = {}) => ({
   resolved,
@@ -10,54 +11,6 @@ const addResolveMisses = ({ resolved = [], missed = {} } = {}) => ({
 });
 
 describe("lib/trace/resolutions", () => {
-  describe("#normalizeResolutions", () => {
-    it("handles base cases", () => {
-      expect(normalizeResolutions()).to.eql({});
-      expect(normalizeResolutions({ resolutions: {} })).to.eql({});
-      expect(normalizeResolutions({ cwd: "foo/bar", resolutions: {} })).to.eql({});
-    });
-
-    it("converts application sources to full paths", () => {
-      // Posix keys
-      expect(normalizeResolutions({ resolutions: {
-        "./src/index.js": ["foo"],
-        "./src/two.js": null
-      } })).to.eql({
-        [path.resolve(path.normalize("./src/index.js"))]: ["foo"],
-        [path.resolve(path.normalize("./src/two.js"))]: []
-      });
-
-      // Native keys
-      expect(normalizeResolutions({ resolutions: {
-        [[".", path.normalize("src/index.js")].join(path.sep)]: ["foo"],
-        [[".", path.normalize("src/two.js")].join(path.sep)]: null
-      } })).to.eql({
-        [path.resolve(path.normalize("./src/index.js"))]: ["foo"],
-        [path.resolve(path.normalize("./src/two.js"))]: []
-      });
-    });
-
-    it("leaves packages with relative paths", () => {
-      // Posix keys
-      expect(normalizeResolutions({ resolutions: {
-        "my-pkg/index.js": ["foo"],
-        "@scope/my-pkg/src/two.js": null
-      } })).to.eql({
-        "my-pkg/index.js": ["foo"],
-        "@scope/my-pkg/src/two.js": []
-      });
-
-      // Native keys
-      expect(normalizeResolutions({ resolutions: {
-        [["my-pkg", path.normalize("src/index.js")].join(path.sep)]: ["foo"],
-        [["@scope/my-pkg", path.normalize("src/two.js")].join(path.sep)]: null
-      } })).to.eql({
-        [["my-pkg", path.normalize("src/index.js")].join(path.sep)]: ["foo"],
-        [["@scope/my-pkg", path.normalize("src/two.js")].join(path.sep)]: []
-      });
-    });
-  });
-
   describe("#resolveMisses", () => {
     it("handles base cases", () => {
       expect(resolveMisses()).to.eql(addResolveMisses());
@@ -66,8 +19,8 @@ describe("lib/trace/resolutions", () => {
 
     it("detects application sources resolutions", () => {
       expect(resolveMisses({
-        resolutions: normalizeResolutions({
-          resolutions: {
+        resolutions: normalizeFileKeys({
+          map: {
             "./src/one/index.js": []
           }
         }),
@@ -104,8 +57,8 @@ describe("lib/trace/resolutions", () => {
       ));
       const twoMissPath = path.resolve(path.normalize("node_modules/@scope/two/miss.js"));
       expect(resolveMisses({
-        resolutions: normalizeResolutions({
-          resolutions: {
+        resolutions: normalizeFileKeys({
+          map: {
             "one/index.js": [],
             "@scope/two/index.js": []
           }

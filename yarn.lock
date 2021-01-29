@@ -2976,10 +2976,10 @@ to-regex-range@^5.0.1:
   dependencies:
     is-number "^7.0.0"
 
-trace-deps@^0.3.6:
-  version "0.3.6"
-  resolved "https://registry.yarnpkg.com/trace-deps/-/trace-deps-0.3.6.tgz#e04cc5ddccd9dfdaea49a3ea56b76c9ac6d6cbb0"
-  integrity sha512-TbaCFmCUuznfd9NjjEg9MYmk2PnYls6L8kAf9f1+MBRjs33CmxehBkkFdtgdHC9UBHN43zAVUPveqi3YBZ3SBQ==
+trace-deps@^0.3.8:
+  version "0.3.8"
+  resolved "https://registry.yarnpkg.com/trace-deps/-/trace-deps-0.3.8.tgz#efb8d55087e96cfbae457c9176e9e2144b8acff2"
+  integrity sha512-VXRdVSmduxemn2y0HzPZiw2zMEMmiNytHb3xSdV/FHFYoO8LAJ4sY1cvP1lDyrPIJDb5wxp30eno8nbE32SjzA==
   dependencies:
     acorn-node "^2.0.1"
     resolve "^1.19.0"
