@@ -1,7 +1,7 @@
 Changes
 =======
 
-## UNRELEASED
+## 0.3.4
 
 * Feature: Support application source paths as keys in `allowMissing`.
 
