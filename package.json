@@ -38,7 +38,7 @@
     "globby": "^11.0.1",
     "jest-worker": "^26.6.2",
     "make-dir": "^3.1.0",
-    "trace-deps": "^0.3.6",
+    "trace-deps": "^0.3.8",
     "yaml": "^1.10.0",
     "yargs": "^16.1.0"
   },
