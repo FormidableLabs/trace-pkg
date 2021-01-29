@@ -534,6 +534,7 @@ describe("lib/actions/package", () => {
         one: {
           "dep.js": `
             require('dep');
+            require('allowed-miss-from-app-sources');
 
             module.exports = "dep";
           `
@@ -567,6 +568,9 @@ describe("lib/actions/package", () => {
         config: {
           options: {
             allowMissing: {
+              "./src/one/dep.js": [
+                "allowed-miss-from-app-sources"
+              ],
               dep: [
                 "missing"
               ]
@@ -619,6 +623,7 @@ describe("lib/actions/package", () => {
           "index.js": "module.exports = require('./dep2');",
           "dep2.js": `
             require(process.env.DYNAMIC_TWO);
+            require("missing-but-allowed-from-app-sources");
 
             module.exports = "dep";
           `
@@ -676,6 +681,12 @@ describe("lib/actions/package", () => {
               trace: [
                 "index.js"
               ],
+              allowMissing: {
+                // This tests different CWD for allowMissing.
+                "./dep2.js": [
+                  "missing-but-allowed-from-app-sources"
+                ]
+              },
               dynamic: {
                 resolutions: {
                   "./dep2.js": [
