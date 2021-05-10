@@ -191,7 +191,9 @@ describe("lib/actions/package", () => {
   it("handles special characters in file names", async () => {
     mock({
       src: {
-        "[...id].js": "module.exports = 'special chars'"
+        "[...id].js": "module.exports = 'dots and brackets in file name';",
+        "...id.js": "module.exports = 'just dots in file name';",
+        "[id].js": "module.exports = 'just brackets in file name';"
       }
     });
 
@@ -215,7 +217,9 @@ describe("lib/actions/package", () => {
       "one.zip"
     ]);
     expect(zipContents("one.zip")).to.eql([
-      "src/[...id].js"
+      "src/...id.js",
+      "src/[...id].js",
+      "src/[id].js"
     ]);
   });
 
