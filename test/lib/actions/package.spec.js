@@ -188,6 +188,37 @@ describe("lib/actions/package", () => {
     ]);
   });
 
+  it("handles special characters in file names", async () => {
+    mock({
+      src: {
+        "[...id].js": "module.exports = 'special chars'"
+      }
+    });
+
+    await createPackage({
+      opts: {
+        config: {
+          packages: {
+            "one.zip": {
+              trace: [
+                "src/**/*.js"
+              ]
+            }
+          }
+        }
+      }
+    });
+
+    expect(logStub).to.have.been.calledWithMatch("Created 1 packages:");
+
+    expect(await globby("*.zip")).to.eql([
+      "one.zip"
+    ]);
+    expect(zipContents("one.zip")).to.eql([
+      "src/[...id].js"
+    ]);
+  });
+
   it("packages monorepos", async () => {
     mock({
       "package.json": JSON.stringify({}),
