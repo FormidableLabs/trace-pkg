@@ -1,6 +1,11 @@
 Changes
 =======
 
+## UNRELEASED
+
+* Feature: Add full support for modern Node.js ESM and `exports`.
+* Chore: Upgrade various dependencies.
+
 ## 0.3.4
 
 * Feature: Support application source paths as keys in `allowMissing`.
