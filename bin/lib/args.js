@@ -78,7 +78,9 @@ const getArgs = async (args) => {
         opts.config = opts.config || yaml.parse(buf.toString());
       } else {
         // Otherwise, just do a normal require().
-        opts.config = _loader.require(path.resolve(argv.config));
+        const jsCfg = _loader.require(path.resolve(argv.config));
+        // Infer if async `config()` function present (and call it).
+        opts.config = typeof jsCfg.config === "function" ? await jsCfg.config() : jsCfg;
       }
     } catch (err) {
       // Enhance message.

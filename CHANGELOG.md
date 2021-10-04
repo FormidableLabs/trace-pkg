@@ -3,6 +3,8 @@ Changes
 
 ## UNRELEASED
 
+* Feature: Async JavaScript configuration function.
+  [#43](https://github.com/FormidableLabs/trace-pkg/issues/43)
 * Dependencies: Various updates.
 * Test: Upgrade `mock-fs` and re-enable Node16+
   [#39](https://github.com/FormidableLabs/trace-pkg/issues/39)
