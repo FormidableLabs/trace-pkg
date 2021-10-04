@@ -1,7 +1,7 @@
 Changes
 =======
 
-## UNRELEASED
+## 0.4.1
 
 * Feature: Async JavaScript configuration function.
   [#43](https://github.com/FormidableLabs/trace-pkg/issues/43)
