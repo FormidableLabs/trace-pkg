@@ -18,9 +18,9 @@ A blazingly fast Node.js zip application packager for AWS Lambda, etc.
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
-
 - [Usage](#usage)
 - [Configuration](#configuration)
+  - [Configuration files](#configuration-files)
   - [Configuration options](#configuration-options)
     - [Global options](#global-options)
     - [Per-package options](#per-package-options)
