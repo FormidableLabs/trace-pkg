@@ -1,6 +1,11 @@
 Changes
 =======
 
+## UNRELEASED
+
+* Test: Upgrade `mock-fs` and re-enable Node16+
+  [#39](https://github.com/FormidableLabs/trace-pkg/issues/39)
+
 ## 0.4.0
 
 * Feature: Add full support for modern Node.js ESM and `exports`.
