@@ -4,18 +4,19 @@ const path = require("path");
 
 const mock = require("mock-fs");
 const sinon = require("sinon");
-const globby = require("globby");
 
 const createPackage = require("../../../lib/actions/package").package;
 const { setLoggingOptions } = require("../../../lib/log");
+const { _resolve, globby } = require("../../../lib/util/esm-pkgs");
 const { zipContents } = require("../../util/file");
 
 describe("lib/actions/package", () => {
   let sandbox;
   let logStub;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     setLoggingOptions({ silent: false });
+    await _resolve();
     mock({});
     sandbox = sinon.createSandbox();
     logStub = sandbox.stub(console, "log");

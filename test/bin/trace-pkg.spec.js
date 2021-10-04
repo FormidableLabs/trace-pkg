@@ -4,13 +4,13 @@ const path = require("path");
 
 const mock = require("mock-fs");
 const sinon = require("sinon");
-const globby = require("globby");
 
 const pkg = require("../../package.json");
 const { NAME } = require("../../bin/lib/args");
 const { cli } = require("../../bin/trace-pkg");
 const { setLoggingOptions } = require("../../lib/log");
 
+const { _resolve, globby } = require("../../lib/util/esm-pkgs");
 const { zipContents } = require("../util/file");
 
 // Normalize across OS for relative paths.
@@ -22,8 +22,9 @@ describe("bin/trace-pkg", () => {
   let sandbox;
   let logStub;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     setLoggingOptions({ silent: false });
+    await _resolve();
     mock({});
     sandbox = sinon.createSandbox();
     logStub = sandbox.stub(console, "log");

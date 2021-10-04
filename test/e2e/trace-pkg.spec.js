@@ -6,8 +6,8 @@ const path = require("path");
 const execa = require("execa");
 const fs = require("fs-extra");
 const uuid = require("uuid");
-const globby = require("globby");
 
+const { globby } = require("../../lib/util/esm-pkgs");
 const { zipContents } = require("../util/file");
 
 const TMP = os.tmpdir();
