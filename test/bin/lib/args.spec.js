@@ -28,7 +28,7 @@ describe("bin/lib/args", () => {
       );
     });
 
-    it("inflates a JS configuration file", async () => {
+    it("inflates a raw JS configuration file", async () => {
       // mock-fs can't handle the real `require` well, so just stub it.
       sandbox.stub(_loader, "require").returns({
         packages: {
@@ -38,6 +38,37 @@ describe("bin/lib/args", () => {
             ]
           }
         }
+      });
+
+      const args = await getArgs([
+        "--config",
+        "trace-pkg.js"
+      ]);
+
+      expect(args).to.have.nested.property("opts.config").that.eql({
+        packages: {
+          one: {
+            trace: [
+              "src/one.js"
+            ]
+          }
+        }
+      });
+    });
+
+
+    it("inflates an async JS function configuration file", async () => {
+      // mock-fs can't handle the real `require` well, so just stub it.
+      sandbox.stub(_loader, "require").returns({
+        config: async () => ({
+          packages: {
+            one: {
+              trace: [
+                "src/one.js"
+              ]
+            }
+          }
+        })
       });
 
       const args = await getArgs([

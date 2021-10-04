@@ -54,6 +54,12 @@ Options:
 
 `trace-pkg` can be configured via a YAML, JavaScript, or JSON file with additional CLI options.
 
+### Configuration files
+
+For a YAML (`.yml`) or JSON (`.json`) file, the top-level object should be the configuration object.
+
+For a JavaScript (`.js`) file, the file will be `require()`-ed in like a normal Node.js file. If there is an `async`/Promise-returning top level function named `config`, then that will be executed asynchronously to receive the configuration object. Otherwise, the object returned by `require()` will be used straight up as the configuration object.
+
 ### Configuration options
 
 Configuration options are generally global (`options.<OPTION_NAME>`) and/or per-package (`packages.<PKG_NAME>.<OPTION_NAME>`). When there is both a global _and_ per-package option, the global option is applied _first_ then the per-package option is added to it. For an array option, that means additional unique items are added in. For an object option, this means that for each key in the object additional unique items in the array value are added in.
