@@ -56,7 +56,6 @@ describe("bin/lib/args", () => {
       });
     });
 
-
     it("inflates an async JS function configuration file", async () => {
       // mock-fs can't handle the real `require` well, so just stub it.
       sandbox.stub(_loader, "require").returns({
