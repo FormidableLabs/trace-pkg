@@ -495,6 +495,6 @@ If you are using the `serverless` framework, definitely give `serverless-jetpack
 [fast-glob]: https://github.com/mrmlnc/fast-glob
 
 
-##Maintenance Status
+## Maintenance Status
 
 **Active:** Formidable is actively working on this project, and we expect to continue for work for the foreseeable future. Bug reports, feature requests and pull requests are welcome.
