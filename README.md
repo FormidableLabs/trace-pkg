@@ -4,6 +4,7 @@ trace-pkg 📦
 [![npm version][npm_img]][npm_site]
 [![Actions Status][actions_img]][actions_site]
 [![Coverage Status][cov_img]][cov_site]
+[![Maintenance Status][maintenance-image]](#maintenance-status)
 
 A blazingly fast Node.js zip application packager for AWS Lambda, etc.
 
@@ -493,6 +494,7 @@ If you are using the `serverless` framework, definitely give `serverless-jetpack
 [serverless-jetpack]: https://github.com/FormidableLabs/serverless-jetpack
 [tracing mode]: https://github.com/FormidableLabs/serverless-jetpack#tracing-mode
 [fast-glob]: https://github.com/mrmlnc/fast-glob
+[maintenance-image]: https://img.shields.io/badge/maintenance-active-green.svg?color=brightgreen&style=flat
 
 
 ## Maintenance Status
