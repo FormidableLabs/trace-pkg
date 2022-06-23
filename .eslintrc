@@ -2,5 +2,9 @@
 extends:
   - formidable/configurations/es6-node
 
+parser: "@babel/eslint-parser"
+parserOptions:
+  requireConfigFile: false
+
 rules:
   object-property-newline: ["error", { allowAllPropertiesOnSameLine: true }]
